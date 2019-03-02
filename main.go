@@ -14,10 +14,6 @@ import (
 	"github.com/alextanhongpin/logging/pkg/xreqid"
 )
 
-type contextKey string
-
-var requestIdContextKey = contextKey("req_id")
-
 func main() {
 	// env := "production"
 	env := "development"
