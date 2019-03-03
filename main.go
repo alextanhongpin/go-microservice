@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -14,20 +16,32 @@ import (
 	"github.com/alextanhongpin/logging/pkg/xreqid"
 )
 
+var buildDate time.Time
+var uptime time.Time
+
 func main() {
+	uptime = time.Now()
 	// env := "production"
 	env := "development"
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	date := os.Getenv("BUILD_DATE")
+	log.Println(date)
+	buildDate, err = time.Parse(time.RFC3339, date)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	svc := fmt.Sprintf("mathsvc-%s", hostname)
 	log := logger.New(env, svc)
 	defer log.Sync()
 	undo := zap.ReplaceGlobals(log)
 	defer undo()
 
-	http.HandleFunc("/", withLogging(log, withRequestID(controller)))
+	http.HandleFunc("/health", withLogging(log, withRequestID(controller)))
 	log.Info("listening to port *:8080")
 	http.ListenAndServe(":8080", nil)
 }
@@ -51,6 +65,12 @@ func withRequestID(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+type Health struct {
+	BuildDate time.Time `json:"build_date,omitempty"`
+	GitTag    string    `json:"git_tag,omitempty"`
+	Uptime    string    `json:"uptime"`
+}
+
 func controller(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	// The request id must be provided.
@@ -58,7 +78,13 @@ func controller(w http.ResponseWriter, r *http.Request) {
 	log := zap.L().With(logger.ReqIdField(reqID))
 	err := service(ctx)
 	log.Error("controller", zap.Error(err))
-	fmt.Fprint(w, "done")
+	// Furnish the health endpoint with necessary information.
+	res := Health{
+		BuildDate: buildDate,
+		GitTag:    os.Getenv("TAG"),
+		Uptime:    time.Since(uptime).String(),
+	}
+	json.NewEncoder(w).Encode(res)
 }
 
 func service(ctx context.Context) error {
