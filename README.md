@@ -11,6 +11,7 @@ Some thoughts on designing maintainable microservice with golang.
 - error handling
 - goroutines termination
 - graceful shutdown
+- health endpoint
 - internal service call
 - logging
 - middlewares (authentication, roles and scopes, invalidating tokens)
