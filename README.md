@@ -3,7 +3,7 @@
 Some thoughts on designing maintainable microservice with golang.
 
 - background worker
-- config
+- [config](#config)
 - controller, model, service and repository
 - database (migration etc)
 - dependency management
@@ -21,6 +21,10 @@ Some thoughts on designing maintainable microservice with golang.
 - request id
 - testing
 - validation
+
+## Introduction 
+
+This is __NOT__ a boilerplate project. You may use it that way, but this is not the purpose of this repository. This is just a collection of best practices and thoughts that I have came across when designing maintainable services. With this, I just hope to make it clear why I choose to write (or design) the code in a specific way, but take it with a grain of salt. The way you structure your code should always depend on your use cases, but for most projects, this repository will serve as a good foundation. Do not fall for the [Déformation professionnelle](https://en.wikipedia.org/wiki/D%C3%A9formation_professionnelle) and always strive to write code that are correct for the right use cases. Most of the patterns here can be applied to other languages (I have used similar structure for `nodejs` and `python`, and this can be applied for definitely any language out there, since it is framework-dependent), this repository is written in `go` just because so.
 
 ## Setup
 
