@@ -26,26 +26,45 @@ Some thoughts on designing maintainable microservice with golang.
 
 This is __NOT__ a boilerplate project. You may use it that way, but this is not the purpose of this repository. This is just a collection of best practices and thoughts that I have came across when designing maintainable services. With this, I just hope to make it clear why I choose to write (or design) the code in a specific way, but take it with a grain of salt. The way you structure your code should always depend on your use cases, but for most projects, this repository will serve as a good foundation. Do not fall for the [Déformation professionnelle](https://en.wikipedia.org/wiki/D%C3%A9formation_professionnelle) and always strive to write code that are correct for the right use cases. Most of the patterns here can be applied to other languages (I have used similar structure for `nodejs` and `python`, and this can be applied for definitely any language out there, since it is framework-dependent), this repository is written in `go` just because so.
 
+## Commit
+
+The commit messages are based on [Semantic Commit Messages](https://seesparkbox.com/foundry/semantic_commit_messages). 
+
 ## Setup
 
 Learn to use a `Makefile`, it simplifies command and standardize your development workflow. Here are some commonly used command:
 
-- `make init`: initialize the project if it is not yet initialized
-- `make install`: install all the dependencies required for this project
-- `make start`: start a local development server with the environment variables set. It doesn't matter if you are starting a web project or backend server, you can standardize the command to start your app.
-- `make build`: build a binary, or compile a web project
-- `make docker`: build a docker image
-- `make test`: run test
-- `make stop`: stop the server
-- `make up`: start docker-compose locally (normally for running a development database)
-- `make down`: stop docker-compose locally
-- `make clean`: clean up temporary directory/resources that are used locally
-
-For example, to start this project, you just need to clone the git repository, then run:
-
 ```bash
+# Initialize the project if it is not yet initialized.
+$ make init
+
+# Install all the dependencies required for this project.
 $ make install
+
+# Start a local development server with the environment variables set. 
+# It doesn't matter if you are starting a web project or backend server, you can standardize the command to start your app.
 $ make start
+
+# Build a binary, or compile a web project.
+$ make build
+
+# Build a docker image.
+$ make docker
+
+# Run test.
+$ make test
+
+# Stop the server.
+$ make stop
+
+# Start docker-compose locally (normally for running a development database).
+$ make up
+
+# Stop docker-compose locally.
+$ make down
+
+# Clean up temporary directory/resources that are used locally.
+$ make clean
 ```
 
 ## Config
