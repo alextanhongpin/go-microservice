@@ -4,12 +4,13 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/alextanhongpin/logging/config"
-	"github.com/alextanhongpin/logging/model"
-	"github.com/alextanhongpin/logging/pkg/logger"
-	"github.com/alextanhongpin/logging/pkg/xreqid"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+
+	"github.com/alextanhongpin/go-microservice/config"
+	"github.com/alextanhongpin/go-microservice/model"
+	"github.com/alextanhongpin/go-microservice/pkg/logger"
+	"github.com/alextanhongpin/go-microservice/pkg/xreqid"
 )
 
 type Controller struct {

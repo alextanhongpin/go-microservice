@@ -2,7 +2,7 @@ package logger
 
 import "go.uber.org/zap"
 
-func New(env, name string) (logger *zap.Logger) {
+func New(env, app, hostname string) (logger *zap.Logger) {
 	switch env {
 	case "production":
 		logger, _ = zap.NewProduction()
@@ -11,7 +11,10 @@ func New(env, name string) (logger *zap.Logger) {
 	default:
 		logger = zap.NewNop()
 	}
-	logger = logger.Named(name)
+	logger = logger.With(
+		zap.String("app", app),
+		zap.String("hostname", hostname),
+	)
 	return
 }
 

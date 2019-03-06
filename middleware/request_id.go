@@ -3,11 +3,11 @@ package middleware
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/alextanhongpin/logging/pkg/xreqid"
+	"github.com/alextanhongpin/go-microservice/pkg/xreqid"
 )
 
-// const requestIdKey = "request_id"
-
+// RequestID obtains the request id from the X-Request-Id header if present, or
+// creates a new one and populates the context with it.
 func RequestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		reqID := xreqid.FromHeader(c.Writer, c.Request)
@@ -25,6 +25,7 @@ func RequestID() gin.HandlerFunc {
 }
 
 // Alternative. Not preferred.
+// const requestIdKey = "request_id"
 // func GetRequestID(c *gin.Context) string {
 //         v, _ := c.Get(requestIdKey)
 //         reqID, _ := v.(string)

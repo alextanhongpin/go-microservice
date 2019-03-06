@@ -9,37 +9,34 @@ import (
 
 type contextKey string
 
-const requestIdContextKey = "req_id"
+const requestIDContextKey = contextKey("req_id")
 
-const HeaderXRequestID = "X-Request-Id"
+const headerXRequestID = "X-Request-Id"
 
+// New returns a unique request id.
 func New() string {
 	return xid.New().String()
 }
 
-func NewContext() context.Context {
-	ctx := context.Background()
-	reqID := New()
-	return ContextWithRequestID(ctx, reqID)
-}
-
+// FromHeader attempts to obtain a request id from the X-Request-Id header, or
+// creates a new one if it does not exist.
 func FromHeader(w http.ResponseWriter, r *http.Request) string {
-	reqID := r.Header.Get(HeaderXRequestID)
+	reqID := r.Header.Get(headerXRequestID)
 	if reqID == "" {
 		reqID = New()
 		// Set the header for both the current request and also
 		// response.
-		r.Header.Set(HeaderXRequestID, reqID)
-		w.Header().Set(HeaderXRequestID, reqID)
+		r.Header.Set(headerXRequestID, reqID)
+		w.Header().Set(headerXRequestID, reqID)
 	}
 	return reqID
 }
 
 func ContextWithRequestID(ctx context.Context, reqID string) context.Context {
-	return context.WithValue(ctx, requestIdContextKey, reqID)
+	return context.WithValue(ctx, requestIDContextKey, reqID)
 }
 
 func FromContext(ctx context.Context) (string, bool) {
-	id, ok := ctx.Value(requestIdContextKey).(string)
+	id, ok := ctx.Value(requestIDContextKey).(string)
 	return id, ok
 }

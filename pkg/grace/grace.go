@@ -8,7 +8,8 @@ import (
 	"time"
 )
 
-func New(handler http.Handler, port string) func() {
+// New returns a new shutdown function given a http.Handler function.
+func New(handler http.Handler, port string) func(context.Context) {
 	srv := &http.Server{
 		Addr:           fmt.Sprintf(":%s", port),
 		Handler:        handler,
@@ -25,19 +26,18 @@ func New(handler http.Handler, port string) func() {
 		close(idleConnsClosed)
 	}()
 
-	return func() {
+	return func(ctx context.Context) {
 		log.Println("shutting down")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {
 			log.Fatal("server shutdown:", err)
 		}
 		select {
 		case <-idleConnsClosed:
+			log.Println("shutdown gracefully")
 			return
 		case <-ctx.Done():
-			log.Println("timeout 5 seconds")
+			log.Println("shutdown abruptly after 5 seconds timeout")
+			return
 		}
-		log.Println("server exiting")
 	}
 }

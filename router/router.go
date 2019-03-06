@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/alextanhongpin/logging/config"
-	"github.com/alextanhongpin/logging/middleware"
-	"github.com/alextanhongpin/logging/service/healthsvc"
+	"github.com/alextanhongpin/go-microservice/config"
+	"github.com/alextanhongpin/go-microservice/middleware"
+	"github.com/alextanhongpin/go-microservice/service/healthsvc"
 )
 
 func New(cfg *config.Config) http.Handler {
@@ -16,6 +16,7 @@ func New(cfg *config.Config) http.Handler {
 	// Setup middlewares.
 	r.Use(gin.Recovery())
 	r.Use(middleware.RequestID())
+	// TODO: Include cors.
 
 	// Health endpoint.
 	{
