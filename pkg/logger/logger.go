@@ -32,10 +32,14 @@ func ReqIDField(reqID string) zap.Field {
 
 // WithContext creates a new logger and populate the logger with the request
 // id.
-func WithContext(ctx context.Context) *zap.Logger {
+func WithContext(ctx context.Context, fields ...zap.Field) *zap.Logger {
 	reqID, _ := reqid.FromContext(ctx)
-	if reqID != "" {
-		return zap.L().With(ReqIDField(reqID))
+	log := zap.L()
+	if len(fields) > 0 {
+		log = log.With(fields...)
 	}
-	return zap.L()
+	if reqID != "" {
+		return log.With(ReqIDField(reqID))
+	}
+	return log
 }
