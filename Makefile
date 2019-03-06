@@ -3,6 +3,11 @@
 # "-" symbol means that the .env file is optional - it will not throw error if
 # the file is not found.
 -include .env
+ifeq ($(MAKE_ENV),)
+	MAKE_ENV := development
+endif
+# This will throw an error if the file is not found.
+include .env.$(MAKE_ENV)
 export
 
 # The git commit version allows us to track the version of the commit the
