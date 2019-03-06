@@ -77,6 +77,14 @@ TL;DR;
 - there many libraries to parse and read environment config, use the one that is the most simple to use
 - pass the config down through DI (dependency injection) or params, __DO NOT__ call it straight from `os.Getenv`
 
+## Working with different environment
+
+We will have one base `.env.development` environent file that exports all the required environment variables for development environment. To override part of the environment, say for staging, just run:
+
+```bash
+MAKE_ENV=staging make your-command
+```
+
 ## Request ID
 
 TODO
