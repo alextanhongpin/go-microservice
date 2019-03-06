@@ -17,6 +17,7 @@ func New(cfg *config.Config) http.Handler {
 	r.Use(gin.Recovery())
 	r.Use(middleware.RequestID())
 	// TODO: Include cors.
+	// TODO: Include logger, but exclude the /health path.
 
 	// Health endpoint.
 	{

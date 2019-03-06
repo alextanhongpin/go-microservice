@@ -51,6 +51,7 @@ func main() {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+
 	// TODO: Close other dependencies here.
 	// var wg sync.WaitGroup
 	// wg.Add(1)

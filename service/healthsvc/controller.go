@@ -4,13 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-
 	"github.com/alextanhongpin/go-microservice/config"
-	"github.com/alextanhongpin/go-microservice/model"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/go-microservice/pkg/xreqid"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type Controller struct {
@@ -33,10 +31,13 @@ func (ctl *Controller) GetHealth(c *gin.Context) {
 
 	service(ctx)
 
-	res := model.Health{
-		BuildDate: cfg.BuildDate,
-		GitTag:    cfg.Tag,
-		Uptime:    cfg.Uptime(),
+	var res Health
+	if cfg != nil {
+		res = Health{
+			BuildDate: cfg.BuildDate,
+			GitTag:    cfg.Tag,
+			Uptime:    cfg.Uptime(),
+		}
 	}
 	c.JSON(http.StatusOK, res)
 }
