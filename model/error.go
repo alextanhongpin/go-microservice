@@ -24,7 +24,7 @@ func ErrorJSON(c *gin.Context, err error) {
 
 	// TODO: Set the error in the gin context too - this allows us to centralize
 	// the error logging.
-	// c.Error(err)
+	c.Error(err)
 	c.JSON(http.StatusBadRequest, ErrorResponse{
 		Code:  reqID,
 		Error: err.Error(),

@@ -6,12 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/go-microservice/pkg/reqid"
 )
 
-// Customized version of https://github.com/gin-contrib/zap to include request
-// id.
-func Logger(logger *zap.Logger, timeFormat string, utc bool) gin.HandlerFunc {
+// Logger is a customized version of https://github.com/gin-contrib/zap to
+// include request id and error.
+func Logger(log *zap.Logger, timeFormat string, utc bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
@@ -22,12 +23,12 @@ func Logger(logger *zap.Logger, timeFormat string, utc bool) gin.HandlerFunc {
 		// Call the next middleware.
 		c.Next()
 
-		ctx := c.Request.Context()
 		end := time.Now()
 		latency := end.Sub(start)
 		if utc {
 			end = end.UTC()
 		}
+		ctx := c.Request.Context()
 		reqID, _ := reqid.FromContext(ctx)
 		fields := []zap.Field{
 			zap.Int("status", c.Writer.Status()),
@@ -37,22 +38,19 @@ func Logger(logger *zap.Logger, timeFormat string, utc bool) gin.HandlerFunc {
 			zap.String("ip", c.ClientIP()),
 			zap.String("user-agent", c.Request.UserAgent()),
 			zap.String("time", end.Format(timeFormat)),
-			zap.String("request_id", reqID),
 			zap.Duration("latency", latency),
+			logger.ReqIdField(reqID),
 		}
 
 		// Include errors if present.
 		if len(c.Errors) > 0 {
-			fields = append(fields, zap.String("error", c.Errors[0].Error()))
-			// Append error field if this is an erroneous request.
-			// for _, e := range c.Errors.Errors() {
-			//         logger.Error(e)
-			// }
+			fields = append(fields,
+				zap.String("error", c.Errors[0].Error()))
 		}
 
 		// Exclude health endpoint, since it introduces noise.
 		if path != "/health" {
-			logger.Info(path, fields...)
+			log.Info(path, fields...)
 		}
 	}
 }

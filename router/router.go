@@ -12,6 +12,7 @@ import (
 	"github.com/alextanhongpin/go-microservice/service/healthsvc"
 )
 
+// New returns a new Router.
 func New(cfg *config.Config) http.Handler {
 	r := gin.New()
 

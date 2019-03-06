@@ -36,26 +36,24 @@ func (ctl *Controller) GetHealth(c *gin.Context) {
 	// Propagate the context to the next layer.
 	service(ctx)
 
-	var res Health
-	if cfg != nil {
-		res = Health{
-			BuildDate: cfg.BuildDate,
-			GitTag:    cfg.Tag,
-			Uptime:    cfg.Uptime(),
-		}
-	}
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, Health{
+		BuildDate: cfg.BuildDate,
+		GitTag:    cfg.Tag,
+		Uptime:    cfg.Uptime(),
+	})
 }
 
 // GetError simulate an error response.
 func (ctl *Controller) GetError(c *gin.Context) {
 	ctx := c.Request.Context()
+
 	// Create a logger with the given request id. We can use this to log
 	// the request of the endpoint that causes error.
 	log := logger.WithContext(ctx)
 
 	// Simulate error.
 	err := errors.New("bad error")
+
 	log.Error("endpointError", zap.Error(err))
 	model.ErrorJSON(c, err)
 }
@@ -65,8 +63,6 @@ func service(ctx context.Context) error {
 	log.Info("service: start")
 	repository(ctx)
 	log.Info("service: end")
-	// Stack trace added to this line.
-	// return errors.Wrap(errors.New("hello"), "service")
 	return nil
 }
 
