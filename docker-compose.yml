@@ -1,0 +1,32 @@
+version: '3.7'
+services:
+        db:
+                image: mysql:8.0.3
+                volumes:
+                        - ./tmp/mysq:/var/lib/mysql
+                ports:
+                        - 127.0.0.1:3306:3306
+                env_file:
+                        .env
+                environment:
+                        MYSQL_ROOT_PASSWORD: root
+                        MYSQL_USER: $DB_USER
+                        MYSQL_PASSWORD: $DB_PASS
+                        MYSQL_DATABASE: $DB_NAME
+
+        app:
+                image: $NAME
+                build:
+                        context: .
+                        labels:
+                                org.label-schema.build-date: $BUILD_DATE
+                                org.label-schema.name: $NAME
+                                org.label-schema.description: $DESCRIPTION 
+                                org.label-schema.url: $URL
+                                org.label-schema.vcs-url: $VCS_URL
+                                org.label-schema.vcs-ref: $VCS_REF 
+                                org.label-schema.vendor: $VENDOR 
+                                org.label-schema.version: $VERSION
+                                org.label-schema.docker.schema-version: "1.0"
+                                org.label-schema.docker.cmd: $CMD
+

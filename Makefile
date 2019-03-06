@@ -14,14 +14,34 @@ TAG := $(shell git rev-parse --short HEAD)
 # long have the service been running in production (uptime).
 BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+
 install: # Install required modules.
 	@go get ./...
 	GO111MODULE=on go get ./...
+	GO111MODULE=on go mod tidy 
 
 mod: # Initialize go modules and update dependencies.
 	GO111MODULE=on go mod init
+	GO111MODULE=on go get ./...
 	GO111MODULE=on go mod tidy 
-	GO111MODULE=on go get
 
 start: # Start the main application with the exported environment variables.
 	@go run main.go
+
+
+DESCRIPTION := "go-microservice sample app"
+NAME := $(shell git config --get user.name)/$(shell basename `git remote get-url origin` .git)
+URL := "the url of the service"
+CMD := "docker run -d ${NAME}"
+VCS_REF := $(shell git rev-parse HEAD) 
+VCS_URL := $(shell git remote get-url origin)
+VENDOR := $(shell git config --get user.name)
+VERSION := $(shell git rev-parse --short HEAD)
+
+docker: 
+	@docker-compose build app
+	@docker tag ${NAME}:latest ${NAME}:${TAG}
+
+inspect: 
+	# Brew install jq to pretty print the json.
+	@docker inspect --format='{{json .Config.Labels}}' ${NAME} | jq
