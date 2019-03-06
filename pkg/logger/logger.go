@@ -1,7 +1,14 @@
 package logger
 
-import "go.uber.org/zap"
+import (
+	"context"
 
+	"go.uber.org/zap"
+
+	"github.com/alextanhongpin/go-microservice/pkg/reqid"
+)
+
+// New returns a basic logger based on the environment.
 func New(env, app, hostname string) (logger *zap.Logger) {
 	switch env {
 	case "production":
@@ -18,6 +25,17 @@ func New(env, app, hostname string) (logger *zap.Logger) {
 	return
 }
 
+// ReqIdField returns a new logger field for request id.
 func ReqIdField(reqID string) zap.Field {
 	return zap.String("req_id", reqID)
+}
+
+// WithContext creates a new logger and populate the logger with the request
+// id.
+func WithContext(ctx context.Context) *zap.Logger {
+	reqID, _ := reqid.FromContext(ctx)
+	if reqID != "" {
+		return zap.L().With(ReqIdField(reqID))
+	}
+	return zap.L()
 }

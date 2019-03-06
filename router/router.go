@@ -2,8 +2,10 @@ package router
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/alextanhongpin/go-microservice/config"
 	"github.com/alextanhongpin/go-microservice/middleware"
@@ -16,6 +18,7 @@ func New(cfg *config.Config) http.Handler {
 	// Setup middlewares.
 	r.Use(gin.Recovery())
 	r.Use(middleware.RequestID())
+	r.Use(middleware.Logger(zap.L(), time.RFC3339, true))
 	// TODO: Include cors.
 	// TODO: Include logger, but exclude the /health path.
 
@@ -23,6 +26,7 @@ func New(cfg *config.Config) http.Handler {
 	{
 		ctl := healthsvc.NewController(cfg)
 		r.GET("/health", ctl.GetHealth)
+		r.GET("/error", ctl.GetError)
 	}
 
 	// Handle no route.

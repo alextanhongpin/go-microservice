@@ -10,15 +10,15 @@ Some thoughts on designing maintainable microservice with golang.
 - documentation
 - error handling
 - goroutines termination
-- graceful shutdown
-- health endpoint
+- [graceful shutdown](#graceful-shutdown)
+- [health](#health)
 - internal service call
-- logging
+- [logging](#logging)
 - middlewares (authentication, roles and scopes, invalidating tokens)
 - minimal docker build
 - naming convention
 - pkg vs model
-- request id
+- [request id](#request-id)
 - testing
 - validation
 
@@ -76,3 +76,21 @@ TL;DR;
 - include the `.env` in the `.gitignore`, we do not want to commit sensitive info to git repository
 - there many libraries to parse and read environment config, use the one that is the most simple to use
 - pass the config down through DI (dependency injection) or params, __DO NOT__ call it straight from `os.Getenv`
+
+## Request ID
+
+TODO
+
+References:
+- https://stackoverflow.com/questions/25433258/what-is-the-x-request-id-http-header
+- https://blog.heroku.com/http_request_id_s_improve_visibility_across_the_application_stack
+
+## Graceful Shutdown
+
+TODO
+
+## Logging
+
+TODO
+
+## Health

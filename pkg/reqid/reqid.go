@@ -1,4 +1,4 @@
-package xreqid
+package reqid
 
 import (
 	"context"
@@ -11,7 +11,8 @@ type contextKey string
 
 const requestIDContextKey = contextKey("req_id")
 
-const headerXRequestID = "X-Request-Id"
+// NOTE: The ID is uppercase.
+const headerXRequestID = "X-Request-ID"
 
 // New returns a unique request id.
 func New() string {
