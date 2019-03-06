@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -18,10 +19,12 @@ func New(cfg *config.Config) http.Handler {
 
 	// Setup middlewares.
 	r.Use(gin.Recovery())
+	r.Use(cors.Default())
+
+	// Custom middlewares.
 	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger(zap.L(), time.RFC3339, true))
-	// TODO: Include cors.
-	// TODO: Include logger, but exclude the /health path.
+	// TODO: Include authorization signer.
 
 	// Health endpoint.
 	{
@@ -38,5 +41,6 @@ func New(cfg *config.Config) http.Handler {
 			"message": "Page not found",
 		})
 	})
+
 	return r
 }

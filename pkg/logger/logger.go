@@ -25,8 +25,8 @@ func New(env, app, hostname string) (logger *zap.Logger) {
 	return
 }
 
-// ReqIdField returns a new logger field for request id.
-func ReqIdField(reqID string) zap.Field {
+// ReqIDField returns a new logger field for request id.
+func ReqIDField(reqID string) zap.Field {
 	return zap.String("req_id", reqID)
 }
 
@@ -35,7 +35,7 @@ func ReqIdField(reqID string) zap.Field {
 func WithContext(ctx context.Context) *zap.Logger {
 	reqID, _ := reqid.FromContext(ctx)
 	if reqID != "" {
-		return zap.L().With(ReqIdField(reqID))
+		return zap.L().With(ReqIDField(reqID))
 	}
 	return zap.L()
 }

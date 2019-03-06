@@ -39,7 +39,7 @@ func Logger(log *zap.Logger, timeFormat string, utc bool) gin.HandlerFunc {
 			zap.String("user-agent", c.Request.UserAgent()),
 			zap.String("time", end.Format(timeFormat)),
 			zap.Duration("latency", latency),
-			logger.ReqIdField(reqID),
+			logger.ReqIDField(reqID),
 		}
 
 		// Include errors if present.
