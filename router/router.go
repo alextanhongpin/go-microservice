@@ -2,11 +2,14 @@ package router
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+
+	"github.com/alextanhongpin/go-microservice/pkg/signer"
 
 	"github.com/alextanhongpin/go-microservice/config"
 	"github.com/alextanhongpin/go-microservice/middleware"
@@ -16,6 +19,13 @@ import (
 // New returns a new Router.
 func New(cfg *config.Config) http.Handler {
 	r := gin.New()
+	signMgr := signer.New(signer.Option{
+		Secret:            []byte(os.Getenv("JWT_SECRET")),
+		DurationInMinutes: 10080 * time.Minute,
+		Issuer:            os.Getenv("ISSUER"),
+		Audience:          os.Getenv("AUDIENCE"),
+		Version:           os.Getenv("SEMVER"),
+	})
 
 	// Setup middlewares.
 	r.Use(gin.Recovery())
@@ -31,6 +41,7 @@ func New(cfg *config.Config) http.Handler {
 		ctl := healthsvc.NewController(cfg)
 		r.GET("/health", ctl.GetHealth)
 		r.GET("/error", ctl.GetError)
+		r.GET("/protected", middleware.Authz(signMgr), ctl.GetHealth)
 	}
 
 	// Handle no route.
