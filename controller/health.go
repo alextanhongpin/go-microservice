@@ -1,4 +1,4 @@
-package healthsvc
+package controller
 
 import (
 	"net/http"
@@ -9,27 +9,26 @@ import (
 	"github.com/alextanhongpin/go-microservice/config"
 )
 
-// Controller ...
-type Controller struct {
+type Health struct {
 	cfg *config.Config
 }
 
-// NewController returns a new pointer to Controller.
-func NewController(c *config.Config) *Controller {
-	return &Controller{c}
+// NewHealth returns a new pointer to Controller.
+func NewHealth(c *config.Config) *Health {
+	return &Health{c}
 }
 
 // Health model provides useful information on the app runtime.
-type Health struct {
+type HealthResponse struct {
 	BuildDate time.Time `json:"build_date,omitempty"`
 	GitTag    string    `json:"git_tag,omitempty"`
 	Uptime    string    `json:"uptime"`
 }
 
 // GetHealth returns the health status of the application.
-func (ctl *Controller) GetHealth(c *gin.Context) {
+func (ctl *Health) GetHealth(c *gin.Context) {
 	cfg := ctl.cfg
-	c.JSON(http.StatusOK, Health{
+	c.JSON(http.StatusOK, HealthResponse{
 		BuildDate: cfg.BuildDate,
 		GitTag:    cfg.Tag,
 		Uptime:    cfg.Uptime(),

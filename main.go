@@ -2,18 +2,29 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	validator "gopkg.in/go-playground/validator.v9"
 
 	"github.com/alextanhongpin/go-microservice/config"
+	"github.com/alextanhongpin/go-microservice/controller"
+	"github.com/alextanhongpin/go-microservice/database"
+	"github.com/alextanhongpin/go-microservice/middleware"
 	"github.com/alextanhongpin/go-microservice/pkg/grace"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
-	"github.com/alextanhongpin/go-microservice/router"
+	"github.com/alextanhongpin/go-microservice/pkg/signer"
+	"github.com/alextanhongpin/go-microservice/service/authsvc"
 )
+
+var db *sql.DB
 
 func main() {
 	cfg := config.New()
@@ -28,22 +39,64 @@ func main() {
 	// that is your preferred way of working.
 	zap.ReplaceGlobals(log)
 
-	// TODO: Setup database.
-	// {
-	//         db, err := database.NewProduction()
-	//         if err != nil {
-	//                 log.Fatal(err)
-	//         }
-	//         defer db.Close()
-	//         db.SetMaxOpenConns(10)
-	//         db.SetMaxIdleConns(5)
-	//         db.SetConnMaxLifetime(time.Hour)
-	// }
-	// Define service facade here.
+	{
+		// This will panic if the environment variables are not set.
+		db = database.NewProduction()
+		defer db.Close()
 
-	// Router takes in the service facade, and orchestrate the endpoints.
-	r := router.New(cfg)
+		db.SetMaxOpenConns(10)
+		db.SetMaxIdleConns(5)
+		db.SetConnMaxLifetime(time.Hour)
+	}
 
+	signMgr := signer.New(signer.Option{
+		Secret:            []byte(cfg.Secret),
+		DurationInMinutes: 10080 * time.Minute,
+		Issuer:            cfg.Issuer,
+		Audience:          cfg.Audience,
+		Semver:            cfg.Semver,
+	})
+
+	validate := validator.New()
+
+	r := gin.New()
+
+	// Setup middlewares.
+	r.Use(gin.Recovery())
+	r.Use(cors.Default())
+
+	// Custom middlewares.
+	r.Use(middleware.RequestID())
+	r.Use(middleware.Logger(zap.L(), time.RFC3339, true))
+	// TODO: Include authorization signer.
+
+	// Health endpoint.
+	{
+		ctl := controller.NewHealth(cfg)
+		r.GET("/health", ctl.GetHealth)
+		r.GET("/protected", middleware.Authz(signMgr), ctl.GetHealth)
+	}
+
+	// Register endpoint.
+	{
+		opt := authsvc.Option{
+			Repo:      authsvc.NewRepository(db),
+			Validator: validate,
+		}
+		svc := authsvc.New(opt)
+		ctl := controller.NewAuthz(svc, signMgr)
+		r.POST("/login", ctl.PostLogin)
+		r.POST("/register", ctl.PostRegister)
+	}
+
+	// Handle no route.
+	r.NoRoute(func(c *gin.Context) {
+		// TODO: Cleanup message.
+		c.JSON(http.StatusNotFound, gin.H{
+			"code":    "PAGE_NOT_FOUND",
+			"message": "Page not found",
+		})
+	})
 	// Graceful shutdown for the server.
 	shutdown := grace.New(r, cfg.Port)
 

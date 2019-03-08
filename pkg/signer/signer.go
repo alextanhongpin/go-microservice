@@ -11,7 +11,7 @@ type (
 	Signer interface {
 		Sign(Claims) (string, error)
 		Verify(tokenString string) (*Claims, error)
-		NewClaims(subject, scope string) *Claims
+		NewClaims(subject, scope string) Claims
 	}
 	Option struct {
 		Secret            []byte
@@ -27,7 +27,7 @@ type (
 
 		// The current service API version. Note that we can easily
 		// expire all the old tokens simply by changing the version.
-		Version string
+		Semver string
 	}
 	SignerImpl struct {
 		opt Option
@@ -36,7 +36,7 @@ type (
 		// To check the user's scope.
 		Scope string `json:"scope"`
 		// A specific version to expire all the old tokens.
-		Version string `json:"version"`
+		Semver string `json:"version"`
 		jwt.StandardClaims
 	}
 )
@@ -64,7 +64,7 @@ func (s *SignerImpl) Verify(tokenString string) (*Claims, error) {
 		// The most basic validation - checking if this is the exact
 		// issuer. Note that you can create multiple signer for
 		// different tokens.
-		if claims.Version != s.opt.Version ||
+		if claims.Semver != s.opt.Semver ||
 			claims.Issuer != s.opt.Issuer ||
 			claims.Audience != s.opt.Audience {
 			return nil, errors.New("invalid token")
@@ -74,11 +74,11 @@ func (s *SignerImpl) Verify(tokenString string) (*Claims, error) {
 	return nil, err
 }
 
-func (s *SignerImpl) NewClaims(subject, scope string) *Claims {
+func (s *SignerImpl) NewClaims(subject, scope string) Claims {
 	now := time.Now()
-	return &Claims{
-		Scope:   scope,
-		Version: s.opt.Version,
+	return Claims{
+		Scope:  scope,
+		Semver: s.opt.Semver,
 		StandardClaims: jwt.StandardClaims{
 			Audience:  s.opt.Audience,
 			Issuer:    s.opt.Issuer,

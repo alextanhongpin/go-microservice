@@ -10,12 +10,17 @@ import (
 
 // Config represent the global application configuration.
 type Config struct {
-	BuildDate time.Time `envconfig:"BUILD_DATE"`
-	Env       string    `envconfig:"ENV" default:"development"`
-	Port      string    `envconfig:"PORT" default:"8080"`
-	Tag       string    `envconfig:"TAG"`
-	Hostname  string    `ignored:"true"`
-	StartAt   time.Time `ignored:"true"`
+	BuildDate  time.Time `envconfig:"BUILD_DATE"`
+	Env        string    `envconfig:"ENV" default:"development"`
+	Port       string    `envconfig:"PORT" default:"8080"`
+	Tag        string    `envconfig:"TAG"`
+	Hostname   string    `ignored:"true"`
+	StartAt    time.Time `ignored:"true"`
+	Issuer     string    `envconfig:"ISSUER" required:"true"`
+	Audience   string    `envconfig:"AUDIENCE" required:"true"`
+	Semver     string    `envconfig:"SEMVER" required:"true"`
+	Secret     string    `envconfig:"SECRET" required:"true"`
+	Credential string    `envconfig:"CREDENTIAL" required:"true"`
 }
 
 // Uptime returns the uptime duration since the time it was deployed.
