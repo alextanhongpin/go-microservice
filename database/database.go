@@ -61,5 +61,6 @@ func NewProduction() *sql.DB {
 		db.Close()
 		log.Fatal(err.Error(), zap.Error(err))
 	}
+
 	return db
 }

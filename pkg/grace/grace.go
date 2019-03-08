@@ -9,7 +9,7 @@ import (
 )
 
 // New returns a new shutdown function given a http.Handler function.
-func New(handler http.Handler, port string) func(context.Context) {
+func New(handler http.Handler, port string, shutdown func()) func(context.Context) {
 	srv := &http.Server{
 		Addr:           fmt.Sprintf(":%s", port),
 		Handler:        handler,
@@ -17,6 +17,7 @@ func New(handler http.Handler, port string) func(context.Context) {
 		ReadTimeout:    10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+	srv.RegisterOnShutdown(shutdown)
 	idleConnsClosed := make(chan struct{})
 	go func() {
 		log.Printf("listening to port *:%s\n", port)
