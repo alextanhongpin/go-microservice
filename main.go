@@ -49,7 +49,6 @@ func main() {
 		db.SetConnMaxLifetime(time.Hour)
 	}
 
-	log.Info("secret is", zap.String("secret", cfg.Secret))
 	signer := passport.New(passport.Option{
 		Secret:            []byte(cfg.Secret),
 		DurationInMinutes: 10080 * time.Minute,
