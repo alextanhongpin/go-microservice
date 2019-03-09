@@ -74,7 +74,7 @@ func main() {
 	{
 		ctl := controller.NewHealth(cfg)
 		r.GET("/health", ctl.GetHealth)
-		r.GET("/protected", middleware.BearerAuthorizer(signer, api.RoleUser), ctl.GetHealth)
+		r.GET("/protected", middleware.BearerAuthorizer(signer), middleware.RoleChecker(api.RoleUser), ctl.GetHealth)
 		r.GET("/basic", middleware.BasicAuthorizer(cfg.Credential), ctl.GetHealth)
 	}
 
@@ -99,13 +99,13 @@ func main() {
 		//         api.RoleAdmin: []string{"read:books", "create:books", "update:books", "delete:books"},
 		//         api.RoleOwner: []string{"read:books", "create:books", "delete:books"},
 		// }
-		// auth := middleware.BearerAuthorizer
-		// r.GET("/books", auth(signer, roles.Can("read:books")...), ctl.GetBooks)
-		// r.POST("/books", auth(signer, roles.Can("create:books")...), ctl.PostBooks)
-		// r.UPDATE("/books", auth(signer, roles.Can("update:books")...), ctl.UpdateBooks)
-		// r.DELETE("/books", auth(signer, roles.Can("delete:books")...), ctl.DeleteBooks)
+		// auth := r.Group("/v1/books", middleware.BearerAuthorizer(signer))
+		// auth.GET("", middleware.RoleChecker(roles.Can("read:books")...), ctl.GetBooks)
+		// auth.POST("", middleware.RoleChecker(roles.Can("create:books")...), ctl.PostBooks)
+		// auth.UPDATE("", middleware.RoleChecker(roles.Can("update:books")...), ctl.UpdateBooks)
+		// auth.DELETE("", middleware.RoleChecker(roles.Can("delete:books")...), ctl.DeleteBooks)
 		// // Endpoint with custom action.
-		// r.POST("/books:approve", auth(signer), ctl.ApproveBooks)
+		// auth.POST("/:approve", ctl.ApproveBooks)
 	}
 	// Handle no route.
 	r.NoRoute(func(c *gin.Context) {

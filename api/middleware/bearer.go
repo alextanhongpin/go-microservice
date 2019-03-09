@@ -9,7 +9,6 @@ import (
 
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/pkg/passport"
-	"github.com/alextanhongpin/pkg/set"
 )
 
 const (
@@ -22,13 +21,7 @@ const (
 	UserContext  = contextKey("user")
 )
 
-func BearerAuthorizer(sign passport.Signer, roles ...api.Role) gin.HandlerFunc {
-	roleValidator := set.New()
-	for _, role := range roles {
-		roleValidator.Add(role)
-	}
-	checkRole := roleValidator.Size() > 0
-
+func BearerAuthorizer(sign passport.Signer) gin.HandlerFunc {
 	checkAuthorization := func(auth string) (*passport.Claims, error) {
 		paths := strings.Split(auth, " ")
 		if len(paths) != 2 {
@@ -41,11 +34,6 @@ func BearerAuthorizer(sign passport.Signer, roles ...api.Role) gin.HandlerFunc {
 		claims, err := sign.Verify(token)
 		if err != nil {
 			return nil, errors.Wrap(err, "middleware verify token failed")
-		}
-
-		role := claims.Role
-		if checkRole && !roleValidator.Has(api.Role(role)) {
-			return nil, errors.Errorf(`role "%s" is invalid`, role)
 		}
 		return claims, nil
 	}
