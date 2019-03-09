@@ -50,3 +50,9 @@ docker:
 inspect: 
 	# Brew install jq to pretty print the json.
 	@docker inspect --format='{{json .Config.Labels}}' ${NAME} | jq
+
+up:
+	@docker-compose up -d mysql
+
+down:
+	@docker-compose down

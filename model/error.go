@@ -1,5 +1,7 @@
 package model
 
+// model folder containing all the models is a bad practice. Consider putting
+// the entities to the root app, or api package.
 import (
 	"net/http"
 

@@ -19,7 +19,7 @@ type (
 	Service interface {
 		Login(LoginRequest) (*LoginResponse, error)
 		Register(RegisterRequest) (*RegisterResponse, error)
-		CreateAccessToken(user, scope string) (string, error)
+		CreateAccessToken(user, role, scope string) (string, error)
 	}
 	ServiceImpl struct {
 		opt Option
@@ -76,8 +76,8 @@ func (s *ServiceImpl) Register(req RegisterRequest) (*RegisterResponse, error) {
 	return &RegisterResponse{user}, errors.Wrap(err, "create user failed")
 }
 
-func (s *ServiceImpl) CreateAccessToken(user, scope string) (string, error) {
-	claims := s.opt.Signer.NewClaims(user, scope)
+func (s *ServiceImpl) CreateAccessToken(user, role, scope string) (string, error) {
+	claims := s.opt.Signer.NewClaims(user, role, scope)
 	accessToken, err := s.opt.Signer.Sign(claims)
 	return accessToken, errors.Wrap(err, "sign token failed")
 }

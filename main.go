@@ -18,6 +18,7 @@ import (
 	"github.com/alextanhongpin/go-microservice/controller"
 	"github.com/alextanhongpin/go-microservice/database"
 	"github.com/alextanhongpin/go-microservice/middleware"
+	"github.com/alextanhongpin/go-microservice/model"
 	"github.com/alextanhongpin/go-microservice/pkg/grace"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/go-microservice/pkg/signer"
@@ -74,7 +75,7 @@ func main() {
 	{
 		ctl := controller.NewHealth(cfg)
 		r.GET("/health", ctl.GetHealth)
-		r.GET("/protected", middleware.Authz(signMgr), ctl.GetHealth)
+		r.GET("/protected", middleware.Authz(signMgr, model.RoleUser), ctl.GetHealth)
 	}
 
 	// Register endpoint.

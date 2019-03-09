@@ -21,15 +21,16 @@ const (
 	Basic  = "Basic"
 
 	scopeContextKey = contextKey("scope")
-	userContextKey  = contextKey("scope")
+	roleContextKey  = contextKey("role")
+	userContextKey  = contextKey("user")
 )
 
-func Authz(sign signer.Signer, scopes ...string) gin.HandlerFunc {
-	s := set.New()
-	for _, scope := range scopes {
-		s.Add(scope)
+func Authz(sign signer.Signer, roles ...string) gin.HandlerFunc {
+	roleValidator := set.New()
+	for _, role := range roles {
+		roleValidator.Add(role)
 	}
-	checkScope := s.Size() > 0
+	checkRole := roleValidator.Size() > 0
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
@@ -65,8 +66,9 @@ func Authz(sign signer.Signer, scopes ...string) gin.HandlerFunc {
 		}
 		user := claims.StandardClaims.Subject
 		scope := claims.Scope
-		if checkScope && !s.Has(scope) {
-			err := errors.Errorf(`scope "%s" is invalid`, scope)
+		role := claims.Role
+		if checkRole && !roleValidator.Has(role) {
+			err := errors.Errorf(`role "%s" is invalid`, role)
 			c.Error(err)
 			c.AbortWithStatusJSON(
 				http.StatusUnauthorized,
@@ -76,6 +78,7 @@ func Authz(sign signer.Signer, scopes ...string) gin.HandlerFunc {
 		}
 		ctx = ContextWithUser(ctx, user)
 		ctx = ContextWithScope(ctx, scope)
+		ctx = ContextWithRole(ctx, role)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
@@ -97,4 +100,13 @@ func ContextWithScope(ctx context.Context, scope string) context.Context {
 func ScopeFromContext(ctx context.Context) (string, bool) {
 	scope, ok := ctx.Value(scopeContextKey).(string)
 	return scope, ok
+}
+
+func ContextWithRole(ctx context.Context, role string) context.Context {
+	return context.WithValue(ctx, roleContextKey, role)
+}
+
+func RoleFromContext(ctx context.Context) (string, bool) {
+	role, ok := ctx.Value(roleContextKey).(string)
+	return role, ok
 }

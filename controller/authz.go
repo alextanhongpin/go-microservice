@@ -49,9 +49,10 @@ func (a *Authz) PostLogin(c *gin.Context) {
 	}
 	var (
 		subject = res.Data.ID
-		scope   = model.ScopeUser
+		scope   = model.ScopeProfile
+		role    = model.RoleUser
 	)
-	token, err := a.service.CreateAccessToken(subject, scope)
+	token, err := a.service.CreateAccessToken(subject, role, scope)
 	if err != nil {
 		log.Error("sign login token failed", zap.Error(err))
 		model.ErrorJSON(c, err)
@@ -91,9 +92,10 @@ func (a *Authz) PostRegister(c *gin.Context) {
 	}
 	var (
 		subject = res.Data.ID
-		scope   = model.ScopeUser
+		scope   = model.ScopeProfile
+		role    = model.RoleUser
 	)
-	token, err := a.service.CreateAccessToken(subject, scope)
+	token, err := a.service.CreateAccessToken(subject, role, scope)
 	if err != nil {
 		log.Error("sign registration token failed", zap.Error(err))
 		model.ErrorJSON(c, err)

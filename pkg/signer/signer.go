@@ -11,7 +11,7 @@ type (
 	Signer interface {
 		Sign(Claims) (string, error)
 		Verify(tokenString string) (*Claims, error)
-		NewClaims(subject, scope string) Claims
+		NewClaims(user, role, scope string) Claims
 	}
 	Option struct {
 		Secret            []byte
@@ -33,8 +33,12 @@ type (
 		opt Option
 	}
 	Claims struct {
-		// To check the user's scope.
+		// The actor of the system.
+		Role string `json:"role"`
+
+		// The resources the actor can access.
 		Scope string `json:"scope"`
+
 		// A specific version to expire all the old tokens.
 		Semver string `json:"version"`
 		jwt.StandardClaims
@@ -74,9 +78,10 @@ func (s *SignerImpl) Verify(tokenString string) (*Claims, error) {
 	return nil, err
 }
 
-func (s *SignerImpl) NewClaims(subject, scope string) Claims {
+func (s *SignerImpl) NewClaims(user, role, scope string) Claims {
 	now := time.Now()
 	return Claims{
+		Role:   role,
 		Scope:  scope,
 		Semver: s.opt.Semver,
 		StandardClaims: jwt.StandardClaims{
@@ -84,7 +89,7 @@ func (s *SignerImpl) NewClaims(subject, scope string) Claims {
 			Issuer:    s.opt.Issuer,
 			ExpiresAt: now.Add(s.opt.DurationInMinutes).Unix(),
 			IssuedAt:  now.Unix(),
-			Subject:   subject,
+			Subject:   user,
 		},
 	}
 }
