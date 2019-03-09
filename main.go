@@ -49,6 +49,7 @@ func main() {
 		db.SetConnMaxLifetime(time.Hour)
 	}
 
+	log.Info("secret is", zap.String("secret", cfg.Secret))
 	signMgr := signer.New(signer.Option{
 		Secret:            []byte(cfg.Secret),
 		DurationInMinutes: 10080 * time.Minute,
@@ -81,6 +82,7 @@ func main() {
 	// Register endpoint.
 	{
 		opt := authenticator.Option{
+			Signer:    signMgr,
 			Repo:      authenticator.NewRepository(db),
 			Validator: validate,
 		}

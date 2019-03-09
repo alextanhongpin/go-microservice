@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/alextanhongpin/go-microservice/api"
-	"github.com/alextanhongpin/pkg/set"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+
+	"github.com/alextanhongpin/go-microservice/api"
+	"github.com/alextanhongpin/pkg/set"
 )
 
 // Basic middleware represents the endpoint protected with the Authorization

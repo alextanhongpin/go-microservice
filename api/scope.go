@@ -11,6 +11,10 @@ func (s Scope) String() string {
 	return string(s)
 }
 
+func (s Scope) Equal(scope string) bool {
+	return string(s) == scope
+}
+
 const (
 	ScopeDefault = Scope("default")
 	ScopeOpenID  = Scope("scope")
