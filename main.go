@@ -87,6 +87,7 @@ func main() {
 		}
 		svc := authn.New(opt)
 		ctl := controller.NewAuthn(svc, signer)
+		// TODO: Throttle the login and register endpoint.
 		r.POST("/login", ctl.PostLogin)
 		r.POST("/register", ctl.PostRegister)
 	}
@@ -95,8 +96,8 @@ func main() {
 	{
 		// roles := api.Roles{
 		//         // The scopes should be exposed per api.
-		//         api.RoleAdmin: set.New("read:books", "create:books", "update:books", "delete:books"),
-		//         api.RoleOwner: set.New("read:books", "create:books", "delete:books"),
+		//         api.RoleAdmin: []string{"read:books", "create:books", "update:books", "delete:books"},
+		//         api.RoleOwner: []string{"read:books", "create:books", "delete:books"},
 		// }
 		// auth := middleware.BearerAuthorizer
 		// r.GET("/books", auth(signer, roles.Can("read:books")...), ctl.GetBooks)
