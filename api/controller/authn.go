@@ -9,29 +9,29 @@ import (
 
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
-	"github.com/alextanhongpin/go-microservice/pkg/signer"
-	"github.com/alextanhongpin/go-microservice/service/authenticator"
+	"github.com/alextanhongpin/go-microservice/pkg/passport"
+	"github.com/alextanhongpin/go-microservice/service/authn"
 )
 
-type Authenticator struct {
-	service authenticator.Service
-	signer  signer.Signer
+type Authn struct {
+	service  authn.Service
+	passport passport.Signer
 }
 
-func NewAuthenticator(svc authenticator.Service, sig signer.Signer) *Authenticator {
-	return &Authenticator{svc, sig}
+func NewAuthn(svc authn.Service, sig passport.Signer) *Authn {
+	return &Authn{svc, sig}
 }
 
 type (
 	PostLoginRequest struct {
-		authenticator.LoginRequest
+		authn.LoginRequest
 	}
 	PostLoginResponse struct {
 		AccessToken string `json:"access_token"`
 	}
 )
 
-func (a *Authenticator) PostLogin(c *gin.Context) {
+func (a *Authn) PostLogin(c *gin.Context) {
 	var req PostLoginRequest
 	if err := c.BindJSON(&req); err != nil {
 		api.ErrorJSON(c, err)
@@ -66,14 +66,14 @@ func (a *Authenticator) PostLogin(c *gin.Context) {
 
 type (
 	PostRegisterRequest struct {
-		authenticator.RegisterRequest
+		authn.RegisterRequest
 	}
 	PostRegisterResponse struct {
 		AccessToken string `json:"access_token"`
 	}
 )
 
-func (a *Authenticator) PostRegister(c *gin.Context) {
+func (a *Authn) PostRegister(c *gin.Context) {
 	var req PostRegisterRequest
 	if err := c.BindJSON(&req); err != nil {
 		api.ErrorJSON(c, err)

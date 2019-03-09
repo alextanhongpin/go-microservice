@@ -6,9 +6,9 @@ import (
 	"github.com/alextanhongpin/go-microservice/pkg/reqid"
 )
 
-// RequestID obtains the request id from the X-Request-Id header if present, or
+// RequestIDProvider obtains the request id from the X-Request-Id header if present, or
 // creates a new one and populates the context with it.
-func RequestID() gin.HandlerFunc {
+func RequestIDProvider() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		reqID := reqid.FromHeader(c.Writer, c.Request)
 

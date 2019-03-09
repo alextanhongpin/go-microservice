@@ -9,6 +9,9 @@ func (r Role) String() string {
 
 const (
 	RoleUser  = Role("user")
+	RoleOwner = Role("owner")
 	RoleGuest = Role("guest")
 	RoleAdmin = Role("admin")
+	// RestrictedUser: Possibly for external client.
+	// ReadOnly
 )

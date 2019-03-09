@@ -9,7 +9,8 @@ import (
 	"github.com/alextanhongpin/go-microservice/api"
 )
 
-func Scope(scope api.Scope) gin.HandlerFunc {
+// ScopeChecker checks if the given Actor has the required scope.
+func ScopeChecker(scope api.Scope) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		s, _ := ScopeContext.Value(ctx)
@@ -23,6 +24,5 @@ func Scope(scope api.Scope) gin.HandlerFunc {
 			return
 		}
 		c.Next()
-
 	}
 }

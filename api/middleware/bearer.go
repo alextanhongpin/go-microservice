@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -9,20 +8,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/alextanhongpin/go-microservice/api"
-	"github.com/alextanhongpin/go-microservice/pkg/signer"
+	"github.com/alextanhongpin/go-microservice/pkg/passport"
 	"github.com/alextanhongpin/pkg/set"
 )
-
-type contextKey string
-
-func (c contextKey) WithValue(ctx context.Context, v string) context.Context {
-	return context.WithValue(ctx, c, v)
-}
-
-func (c contextKey) Value(ctx context.Context) (string, bool) {
-	v, ok := ctx.Value(c).(string)
-	return v, ok
-}
 
 const (
 	// Capitalization matters.
@@ -34,14 +22,14 @@ const (
 	UserContext  = contextKey("user")
 )
 
-func Authz(sign signer.Signer, roles ...api.Role) gin.HandlerFunc {
+func BearerAuthorizer(sign passport.Signer, roles ...api.Role) gin.HandlerFunc {
 	roleValidator := set.New()
 	for _, role := range roles {
 		roleValidator.Add(role)
 	}
 	checkRole := roleValidator.Size() > 0
 
-	checkAuthorization := func(auth string) (*signer.Claims, error) {
+	checkAuthorization := func(auth string) (*passport.Claims, error) {
 		paths := strings.Split(auth, " ")
 		if len(paths) != 2 {
 			return nil, errors.New("missing authorization header")

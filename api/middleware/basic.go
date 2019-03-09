@@ -14,9 +14,9 @@ import (
 	"github.com/alextanhongpin/pkg/set"
 )
 
-// Basic middleware represents the endpoint protected with the Authorization
+// BasicAuthorizer middleware represents the endpoint protected with the Authorization
 // Header set to `Basic username:password`.
-func Basic(credential string, extras ...string) gin.HandlerFunc {
+func BasicAuthorizer(credential string, extras ...string) gin.HandlerFunc {
 	credManager := set.New()
 	credentials := append([]string{credential}, extras...)
 	for _, cred := range credentials {

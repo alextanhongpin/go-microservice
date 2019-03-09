@@ -1,4 +1,4 @@
-package authenticator
+package authn
 
 import (
 	"database/sql"

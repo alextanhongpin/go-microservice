@@ -1,21 +1,28 @@
-package authenticator
+// Attempted the following name for package:
+// - authenticator: this sounds more like a verb
+// - authentication: too long
+// - userlogin: is too specific, since user can also register
+// - loginUser: breaks the convention, since package name is preferable a noun.
+// - authz and authn is better.
+
+package authn
 
 import (
 	"github.com/pkg/errors"
 	validator "gopkg.in/go-playground/validator.v9"
 
+	"github.com/alextanhongpin/go-microservice/pkg/passport"
 	"github.com/alextanhongpin/passwd"
-
-	"github.com/alextanhongpin/go-microservice/pkg/signer"
 )
 
 type (
 	Option struct {
 		Repo      Repository
 		Validator *validator.Validate
-		Signer    signer.Signer
+		Signer    passport.Signer
 	}
 	Service interface {
+		// The method name must be <verb><resource>.
 		Login(LoginRequest) (*LoginResponse, error)
 		Register(RegisterRequest) (*RegisterResponse, error)
 		CreateAccessToken(user, role, scope string) (string, error)

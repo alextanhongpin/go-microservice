@@ -1,4 +1,6 @@
-package signer
+// originally named signer, but then package name should be a noun. There's
+// also a stutter here, since the interface name is Signer.
+package passport
 
 import (
 	"time"

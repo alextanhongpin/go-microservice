@@ -21,8 +21,8 @@ import (
 	"github.com/alextanhongpin/go-microservice/database"
 	"github.com/alextanhongpin/go-microservice/pkg/grace"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
-	"github.com/alextanhongpin/go-microservice/pkg/signer"
-	"github.com/alextanhongpin/go-microservice/service/authenticator"
+	"github.com/alextanhongpin/go-microservice/pkg/passport"
+	"github.com/alextanhongpin/go-microservice/service/authn"
 )
 
 func main() {
@@ -50,7 +50,7 @@ func main() {
 	}
 
 	log.Info("secret is", zap.String("secret", cfg.Secret))
-	signMgr := signer.New(signer.Option{
+	signer := passport.New(passport.Option{
 		Secret:            []byte(cfg.Secret),
 		DurationInMinutes: 10080 * time.Minute,
 		Issuer:            cfg.Issuer,
@@ -67,31 +67,42 @@ func main() {
 	r.Use(cors.Default())
 
 	// Custom middlewares.
-	r.Use(middleware.RequestID())
-	r.Use(middleware.Logger(zap.L(), time.RFC3339, true))
-	// TODO: Include authorization signer.
+	r.Use(middleware.RequestIDProvider())
+	r.Use(middleware.Logger(log, time.RFC3339, true))
+	// TODO: Include authorization passport.
 
 	// Health endpoint.
 	{
 		ctl := controller.NewHealth(cfg)
 		r.GET("/health", ctl.GetHealth)
-		r.GET("/protected", middleware.Authz(signMgr, api.RoleUser), ctl.GetHealth)
-		r.GET("/basic", middleware.Basic(cfg.Credential), ctl.GetHealth)
+		r.GET("/protected", middleware.BearerAuthorizer(signer, api.RoleUser), ctl.GetHealth)
+		r.GET("/basic", middleware.BasicAuthorizer(cfg.Credential), ctl.GetHealth)
 	}
 
-	// Register endpoint.
+	// Authentication endpoint.
 	{
-		opt := authenticator.Option{
-			Signer:    signMgr,
-			Repo:      authenticator.NewRepository(db),
+		opt := authn.Option{
+			Signer:    signer,
+			Repo:      authn.NewRepository(db),
 			Validator: validate,
 		}
-		svc := authenticator.New(opt)
-		ctl := controller.NewAuthenticator(svc, signMgr)
+		svc := authn.New(opt)
+		ctl := controller.NewAuthn(svc, signer)
 		r.POST("/login", ctl.PostLogin)
 		r.POST("/register", ctl.PostRegister)
 	}
 
+	// Books endpoint with multiple roles.
+	{
+		// ownerAndAdmin := middleware.BearerAuthorizer(signer, api.RoleOwner, api.RoleAdmin)
+		// adminOnly := middleware.BearerAuthorizer(signer, api.RoleAdmin)
+		// r.GET("/books", ownerAndAdmin, ctl.GetBooks)
+		// r.POST("/books", ownerAndAdmin, ctl.PostBooks)
+		// r.UPDATE("/books", ownerAndAdmin, ctl.UpdateBooks)
+		// r.DELETE("/books", adminOnly, ctl.DeleteBooks)
+		// Endpoint with custom action.
+		// r.POST("/books:approve", adminOnly, ctl.ApproveBooks)
+	}
 	// Handle no route.
 	r.NoRoute(func(c *gin.Context) {
 		// TODO: Cleanup message.
