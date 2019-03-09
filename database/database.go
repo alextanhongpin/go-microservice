@@ -32,6 +32,8 @@ func New(opt Option) (*sql.DB, error) {
 		ParseTime: true,
 		Params:    map[string]string{"charset": "utf8"},
 		Collation: "utf8mb4_unicode_ci",
+		// Required for mysql:8.0.0 and above.
+		AllowNativePasswords: true,
 	}
 	db, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
@@ -55,6 +57,7 @@ func NewProduction() *sql.DB {
 		if err == nil {
 			break
 		}
+		log.Printf("retrying db connection: attempt %d\n", i+1)
 		time.Sleep(5 * time.Second)
 	}
 	if err != nil {

@@ -1,11 +1,12 @@
 version: '3.7'
 services:
         db:
-                image: mysql:8.0.3
+                image: mysql:8.0.15
                 volumes:
                         - ./tmp/mysq:/var/lib/mysql
+                command: --default-authentication-plugin=mysql_native_password
                 ports:
-                        - 127.0.0.1:3306:3306
+                        - $DB_HOST:3306:3306
                 env_file:
                         .env
                 environment:

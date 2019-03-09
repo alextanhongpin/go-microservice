@@ -14,18 +14,16 @@ import (
 	"go.uber.org/zap"
 	validator "gopkg.in/go-playground/validator.v9"
 
+	"github.com/alextanhongpin/go-microservice/api"
+	"github.com/alextanhongpin/go-microservice/api/controller"
+	"github.com/alextanhongpin/go-microservice/api/middleware"
 	"github.com/alextanhongpin/go-microservice/config"
-	"github.com/alextanhongpin/go-microservice/controller"
 	"github.com/alextanhongpin/go-microservice/database"
-	"github.com/alextanhongpin/go-microservice/middleware"
-	"github.com/alextanhongpin/go-microservice/model"
 	"github.com/alextanhongpin/go-microservice/pkg/grace"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/go-microservice/pkg/signer"
-	"github.com/alextanhongpin/go-microservice/service/authsvc"
+	"github.com/alextanhongpin/go-microservice/service/authenticator"
 )
-
-var db *sql.DB
 
 func main() {
 	cfg := config.New()
@@ -40,6 +38,7 @@ func main() {
 	// that is your preferred way of working.
 	zap.ReplaceGlobals(log)
 
+	var db *sql.DB
 	{
 		// This will panic if the environment variables are not set.
 		db = database.NewProduction()
@@ -75,17 +74,18 @@ func main() {
 	{
 		ctl := controller.NewHealth(cfg)
 		r.GET("/health", ctl.GetHealth)
-		r.GET("/protected", middleware.Authz(signMgr, model.RoleUser), ctl.GetHealth)
+		r.GET("/protected", middleware.Authz(signMgr, api.RoleUser), ctl.GetHealth)
+		r.GET("/basic", middleware.Basic(cfg.Credential), ctl.GetHealth)
 	}
 
 	// Register endpoint.
 	{
-		opt := authsvc.Option{
-			Repo:      authsvc.NewRepository(db),
+		opt := authenticator.Option{
+			Repo:      authenticator.NewRepository(db),
 			Validator: validate,
 		}
-		svc := authsvc.New(opt)
-		ctl := controller.NewAuthz(svc, signMgr)
+		svc := authenticator.New(opt)
+		ctl := controller.NewAuthenticator(svc, signMgr)
 		r.POST("/login", ctl.PostLogin)
 		r.POST("/register", ctl.PostRegister)
 	}

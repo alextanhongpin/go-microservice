@@ -22,6 +22,7 @@ BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 install: # Install required modules.
 	@go get ./...
+	@go get -u github.com/pressly/goose/cmd/goose
 	GO111MODULE=on go get ./...
 	GO111MODULE=on go mod tidy 
 
@@ -52,7 +53,26 @@ inspect:
 	@docker inspect --format='{{json .Config.Labels}}' ${NAME} | jq
 
 up:
-	@docker-compose up -d mysql
+	@docker-compose up -d db
 
 down:
 	@docker-compose down
+
+
+## DB
+MIGRATION_FOLDER := "./migrations"
+create-migration-%:
+	@mkdir -p ${MIGRATION_FOLDER}
+	@goose -dir ${MIGRATION_FOLDER} create $* sql 
+
+migrate:
+	@goose -dir ${MIGRATION_FOLDER} mysql "${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}?parseTime=true" up
+
+rollback:
+	@goose -dir ${MIGRATION_FOLDER} mysql "${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}?parseTime=true" down
+
+clean:
+	@rm -rf tmp
+
+mysql:
+	@mysql -h ${DB_HOST} -u ${DB_USER} -p ${DB_NAME}

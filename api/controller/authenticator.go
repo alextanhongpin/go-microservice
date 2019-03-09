@@ -7,34 +7,34 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"github.com/alextanhongpin/go-microservice/model"
+	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/go-microservice/pkg/signer"
-	"github.com/alextanhongpin/go-microservice/service/authsvc"
+	"github.com/alextanhongpin/go-microservice/service/authenticator"
 )
 
-type Authz struct {
-	service authsvc.Service
+type Authenticator struct {
+	service authenticator.Service
 	signer  signer.Signer
 }
 
-func NewAuthz(svc authsvc.Service, sig signer.Signer) *Authz {
-	return &Authz{svc, sig}
+func NewAuthenticator(svc authenticator.Service, sig signer.Signer) *Authenticator {
+	return &Authenticator{svc, sig}
 }
 
 type (
 	PostLoginRequest struct {
-		authsvc.LoginRequest
+		authenticator.LoginRequest
 	}
 	PostLoginResponse struct {
 		AccessToken string `json:"access_token"`
 	}
 )
 
-func (a *Authz) PostLogin(c *gin.Context) {
+func (a *Authenticator) PostLogin(c *gin.Context) {
 	var req PostLoginRequest
 	if err := c.BindJSON(&req); err != nil {
-		model.ErrorJSON(c, err)
+		api.ErrorJSON(c, err)
 		return
 	}
 	var (
@@ -44,18 +44,18 @@ func (a *Authz) PostLogin(c *gin.Context) {
 	res, err := a.service.Login(req.LoginRequest)
 	if err != nil {
 		log.Error("login user failed", zap.Error(err))
-		model.ErrorJSON(c, errors.New("username or password is invalid"))
+		api.ErrorJSON(c, errors.New("username or password is invalid"))
 		return
 	}
 	var (
 		subject = res.Data.ID
-		scope   = model.ScopeProfile
-		role    = model.RoleUser
+		scope   = api.Scopes(api.ScopeProfile, api.ScopeOpenID)
+		role    = api.RoleUser
 	)
-	token, err := a.service.CreateAccessToken(subject, role, scope)
+	token, err := a.service.CreateAccessToken(subject, role.String(), scope)
 	if err != nil {
 		log.Error("sign login token failed", zap.Error(err))
-		model.ErrorJSON(c, err)
+		api.ErrorJSON(c, err)
 		return
 	}
 
@@ -66,17 +66,17 @@ func (a *Authz) PostLogin(c *gin.Context) {
 
 type (
 	PostRegisterRequest struct {
-		authsvc.RegisterRequest
+		authenticator.RegisterRequest
 	}
 	PostRegisterResponse struct {
 		AccessToken string `json:"access_token"`
 	}
 )
 
-func (a *Authz) PostRegister(c *gin.Context) {
+func (a *Authenticator) PostRegister(c *gin.Context) {
 	var req PostRegisterRequest
 	if err := c.BindJSON(&req); err != nil {
-		model.ErrorJSON(c, err)
+		api.ErrorJSON(c, err)
 		return
 	}
 	var (
@@ -87,18 +87,18 @@ func (a *Authz) PostRegister(c *gin.Context) {
 	res, err := a.service.Register(req.RegisterRequest)
 	if err != nil {
 		log.Error("register user failed", zap.Error(err))
-		model.ErrorJSON(c, errors.New("username or email is invalid"))
+		api.ErrorJSON(c, errors.New("username or email is invalid"))
 		return
 	}
 	var (
 		subject = res.Data.ID
-		scope   = model.ScopeProfile
-		role    = model.RoleUser
+		scope   = api.Scopes(api.ScopeProfile, api.ScopeOpenID)
+		role    = api.RoleUser
 	)
-	token, err := a.service.CreateAccessToken(subject, role, scope)
+	token, err := a.service.CreateAccessToken(subject, role.String(), scope)
 	if err != nil {
 		log.Error("sign registration token failed", zap.Error(err))
-		model.ErrorJSON(c, err)
+		api.ErrorJSON(c, err)
 		return
 	}
 
