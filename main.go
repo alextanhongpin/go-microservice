@@ -93,14 +93,18 @@ func main() {
 
 	// Books endpoint with multiple roles.
 	{
-		// ownerAndAdmin := middleware.BearerAuthorizer(signer, api.RoleOwner, api.RoleAdmin)
-		// adminOnly := middleware.BearerAuthorizer(signer, api.RoleAdmin)
-		// r.GET("/books", ownerAndAdmin, ctl.GetBooks)
-		// r.POST("/books", ownerAndAdmin, ctl.PostBooks)
-		// r.UPDATE("/books", ownerAndAdmin, ctl.UpdateBooks)
-		// r.DELETE("/books", adminOnly, ctl.DeleteBooks)
-		// Endpoint with custom action.
-		// r.POST("/books:approve", adminOnly, ctl.ApproveBooks)
+		// roles := api.Roles{
+		//         // The scopes should be exposed per api.
+		//         api.RoleAdmin: set.New("read:books", "create:books", "update:books", "delete:books"),
+		//         api.RoleOwner: set.New("read:books", "create:books", "delete:books"),
+		// }
+		// auth := middleware.BearerAuthorizer
+		// r.GET("/books", auth(signer, roles.Can("read:books")...), ctl.GetBooks)
+		// r.POST("/books", auth(signer, roles.Can("create:books")...), ctl.PostBooks)
+		// r.UPDATE("/books", auth(signer, roles.Can("update:books")...), ctl.UpdateBooks)
+		// r.DELETE("/books", auth(signer, roles.Can("delete:books")...), ctl.DeleteBooks)
+		// // Endpoint with custom action.
+		// r.POST("/books:approve", auth(signer), ctl.ApproveBooks)
 	}
 	// Handle no route.
 	r.NoRoute(func(c *gin.Context) {
