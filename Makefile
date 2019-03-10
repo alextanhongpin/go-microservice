@@ -23,8 +23,10 @@ BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 install: # Install required modules.
 	@go get ./...
 	@go get -u github.com/pressly/goose/cmd/goose
-	GO111MODULE=on go get ./...
-	GO111MODULE=on go mod tidy 
+	@#The release tag is not updated, need to point to master to ensure it is pulling the latest version.
+	@GO111MODULE=on go get github.com/satori/go.uuid@master
+	@GO111MODULE=on go get
+	@GO111MODULE=on go mod tidy 
 
 mod: # Initialize go modules and update dependencies.
 	GO111MODULE=on go mod init

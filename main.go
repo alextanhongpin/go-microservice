@@ -16,7 +16,6 @@ import (
 	validator "gopkg.in/go-playground/validator.v9"
 
 	"github.com/alextanhongpin/go-microservice/api"
-	"github.com/alextanhongpin/go-microservice/api/controller"
 	"github.com/alextanhongpin/go-microservice/api/middleware"
 	"github.com/alextanhongpin/go-microservice/config"
 	"github.com/alextanhongpin/go-microservice/database"
@@ -25,6 +24,7 @@ import (
 	"github.com/alextanhongpin/go-microservice/pkg/passport"
 	"github.com/alextanhongpin/go-microservice/pkg/ratelimit"
 	"github.com/alextanhongpin/go-microservice/service/authn"
+	"github.com/alextanhongpin/go-microservice/service/health"
 )
 
 type Shutdown func(ctx context.Context)
@@ -34,7 +34,10 @@ func main() {
 	cfg := config.New()
 
 	// Create a namespace for the service running.
-	log := logger.New(cfg.Env, "your_app", cfg.Hostname)
+	log := logger.New(cfg.Env,
+		zap.String("app", cfg.App),
+		zap.String("host", cfg.Hostname))
+
 	defer log.Sync()
 
 	// We are replacing the global logger here. Since logging happens at
@@ -73,15 +76,16 @@ func main() {
 	// Custom middlewares.
 	r.Use(middleware.RequestIDProvider())
 	r.Use(middleware.Logger(log, time.RFC3339, true))
-	// TODO: Include authorization passport.
+
+	bearerAuthorizer := middleware.BearerAuthorizer(signer)
+	basicAuthorizer := middleware.BasicAuthorizer(cfg.Credential)
 
 	// Health endpoint.
 	{
-		ctl := controller.NewHealth(cfg)
+		ctl := health.NewController(cfg)
 		r.GET("/health", ctl.GetHealth)
-		r.GET("/protected", middleware.BearerAuthorizer(signer), middleware.RoleChecker(api.RoleUser), ctl.GetHealth)
-		r.GET("/basic", middleware.BasicAuthorizer(cfg.Credential), ctl.GetHealth)
-
+		r.GET("/protected", bearerAuthorizer, middleware.RoleChecker(api.RoleUser), ctl.GetHealth)
+		r.GET("/basic", basicAuthorizer, ctl.GetHealth)
 	}
 
 	// Authentication endpoint.
@@ -91,8 +95,8 @@ func main() {
 			Repo:      authn.NewRepository(db),
 			Validator: validate,
 		}
-		svc := authn.New(opt)
-		ctl := controller.NewAuthn(svc, signer)
+		svc := authn.NewService(opt)
+		ctl := authn.NewController(svc, signer)
 
 		// Endpoint throttled.
 		var (
@@ -123,7 +127,7 @@ func main() {
 		// auth.UPDATE("", middleware.RoleChecker(roles.Can("update:books")...), ctl.UpdateBooks)
 		// auth.DELETE("", middleware.RoleChecker(roles.Can("delete:books")...), ctl.DeleteBooks)
 		// // Endpoint with custom action.
-		// auth.POST("/:approve", ctl.ApproveBooks)
+		// auth.POST("/:id/book:approve", ctl.ApproveBooks)
 	}
 	// Handle no route.
 	r.NoRoute(func(c *gin.Context) {
@@ -150,9 +154,9 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(len(shutdowns))
 	for _, shutdown := range shutdowns {
-		go func(fn Shutdown) {
+		go func(shutdown Shutdown) {
 			defer wg.Done()
-			fn(ctx)
+			shutdown(ctx)
 		}(shutdown)
 	}
 	wg.Wait()

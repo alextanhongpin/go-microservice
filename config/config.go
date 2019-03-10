@@ -13,6 +13,7 @@ type Config struct {
 	BuildDate  time.Time `envconfig:"BUILD_DATE"`
 	Env        string    `envconfig:"ENV" default:"development"`
 	Port       string    `envconfig:"PORT" default:"8080"`
+	App        string    `envconfig:"APP" default:"yourapp"`
 	Tag        string    `envconfig:"TAG"`
 	Hostname   string    `ignored:"true"`
 	StartAt    time.Time `ignored:"true"`

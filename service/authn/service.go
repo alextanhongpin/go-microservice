@@ -32,8 +32,8 @@ type (
 	}
 )
 
-// New returns a new Authenticator service.
-func New(opt Option) *ServiceImpl {
+// NewService returns a new Authenticator service.
+func NewService(opt Option) *ServiceImpl {
 	return &ServiceImpl{opt}
 }
 

@@ -9,7 +9,7 @@ import (
 )
 
 // New returns a basic logger based on the environment.
-func New(env, app, hostname string) (logger *zap.Logger) {
+func New(env string, fields ...zap.Field) (logger *zap.Logger) {
 	switch env {
 	case "production":
 		logger, _ = zap.NewProduction()
@@ -18,10 +18,7 @@ func New(env, app, hostname string) (logger *zap.Logger) {
 	default:
 		logger = zap.NewNop()
 	}
-	logger = logger.With(
-		zap.String("app", app),
-		zap.String("hostname", hostname),
-	)
+	logger = logger.With(fields...)
 	return
 }
 
