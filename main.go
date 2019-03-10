@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -22,10 +23,14 @@ import (
 	"github.com/alextanhongpin/go-microservice/pkg/grace"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/go-microservice/pkg/passport"
+	"github.com/alextanhongpin/go-microservice/pkg/ratelimit"
 	"github.com/alextanhongpin/go-microservice/service/authn"
 )
 
+type Shutdown func(ctx context.Context)
+
 func main() {
+	var shutdowns []Shutdown
 	cfg := config.New()
 
 	// Create a namespace for the service running.
@@ -76,6 +81,7 @@ func main() {
 		r.GET("/health", ctl.GetHealth)
 		r.GET("/protected", middleware.BearerAuthorizer(signer), middleware.RoleChecker(api.RoleUser), ctl.GetHealth)
 		r.GET("/basic", middleware.BasicAuthorizer(cfg.Credential), ctl.GetHealth)
+
 	}
 
 	// Authentication endpoint.
@@ -87,9 +93,21 @@ func main() {
 		}
 		svc := authn.New(opt)
 		ctl := controller.NewAuthn(svc, signer)
-		// TODO: Throttle the login and register endpoint.
-		r.POST("/login", ctl.PostLogin)
-		r.POST("/register", ctl.PostRegister)
+
+		// Endpoint throttled.
+		var (
+			interval     = ratelimit.Per(time.Minute, 5) // 5 req/minute
+			burst        = 1
+			limiter      = ratelimit.New(interval, burst)
+			every        = 1 * time.Minute
+			expiresAfter = 1 * time.Minute
+		)
+		shutdown := limiter.CleanupVisitor(every, expiresAfter)
+		shutdowns = append(shutdowns, shutdown)
+
+		throttled := r.Group("/", middleware.RateLimiter(limiter))
+		throttled.POST("/login", ctl.PostLogin)
+		throttled.POST("/register", ctl.PostRegister)
 	}
 
 	// Books endpoint with multiple roles.
@@ -117,21 +135,26 @@ func main() {
 	})
 	// Graceful shutdown for the server.
 	shutdown := grace.New(r, cfg.Port)
+	shutdowns = append(shutdowns, shutdown)
 
 	// Listen to the os signal for ctrl+c.
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	// TODO: Close other dependencies here.
-	// var wg sync.WaitGroup
-	// wg.Add(1)
-	// wg.Wait()
-
 	// Create a global context cancellation to orchestrate graceful
 	// shutdown for different services.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	shutdown(ctx)
+	var wg sync.WaitGroup
+	wg.Add(len(shutdowns))
+	for _, shutdown := range shutdowns {
+		go func(fn Shutdown) {
+			defer wg.Done()
+			fn(ctx)
+		}(shutdown)
+	}
+	wg.Wait()
+	log.Info("terminating")
 }
