@@ -23,6 +23,7 @@ type (
 	}
 	Service interface {
 		// The method name must be <verb><resource>.
+		// The name should be LoginRequest/RegisterRequest.
 		Login(LoginRequest) (*LoginResponse, error)
 		Register(RegisterRequest) (*RegisterResponse, error)
 		CreateAccessToken(user, role, scope string) (string, error)

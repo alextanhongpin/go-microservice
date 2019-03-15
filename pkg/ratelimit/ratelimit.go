@@ -15,22 +15,23 @@ func Per(duration time.Duration, n int) rate.Limit {
 }
 
 type Visitor struct {
-	limiter  *rate.Limiter
 	lastSeen time.Time
+	limiter  *rate.Limiter
 }
 
 type Limiter interface {
-	GetVisitor(clientIP string) *rate.Limiter
 	AddVisitor(clientIP string) *rate.Limiter
 	CleanupVisitor(interval, expiresIn time.Duration) func(context.Context)
+	DeleteVisitor(expiresIn time.Duration)
+	GetVisitor(clientIP string) *rate.Limiter
 }
 
 type LimiterImpl struct {
 	sync.RWMutex
-	sync.Once
-	quit     (chan struct{})
 	visitors map[string]*Visitor
-	factory  func() *rate.Limiter
+	sync.Once
+	factory func() *rate.Limiter
+	quit    (chan struct{})
 }
 
 func New(limit rate.Limit, burst int) *LimiterImpl {
@@ -58,10 +59,27 @@ func (r *LimiterImpl) GetVisitor(clientIP string) *rate.Limiter {
 	if !exist {
 		return r.AddVisitor(clientIP)
 	}
-	r.Lock()
-	visitor.lastSeen = time.Now()
-	r.Unlock()
+	r.UpdateVisitor(clientIP)
 	return visitor.limiter
+}
+
+func (r *LimiterImpl) UpdateVisitor(clientIP string) {
+	r.Lock()
+	visitor, exist := r.visitors[clientIP]
+	if exist {
+		visitor.lastSeen = time.Now()
+	}
+	r.Unlock()
+}
+
+func (r *LimiterImpl) DeleteVisitor(expiresIn time.Duration) {
+	r.Lock()
+	for ip, v := range r.visitors {
+		if time.Since(v.lastSeen) > expiresIn {
+			delete(r.visitors, ip)
+		}
+	}
+	r.Unlock()
 }
 
 func (r *LimiterImpl) CleanupVisitor(interval, expiresIn time.Duration) func(context.Context) {
@@ -73,13 +91,7 @@ func (r *LimiterImpl) CleanupVisitor(interval, expiresIn time.Duration) func(con
 		for {
 			select {
 			case <-t.C:
-				r.Lock()
-				for ip, v := range r.visitors {
-					if time.Since(v.lastSeen) > expiresIn {
-						delete(r.visitors, ip)
-					}
-				}
-				r.Unlock()
+				r.DeleteVisitor(expiresIn)
 			case <-r.quit:
 				log.Info("ratelimiter closed")
 				close(closed)
