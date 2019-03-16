@@ -18,8 +18,8 @@ import (
 
 type (
 	LoginRequest struct {
-		Username string `json:"username" validate:"email,required"`
-		Password string `json:"password" validate:"required"`
+		Username string `json:"username" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=8"`
 	}
 	LoginResponse struct {
 		AccessToken string `json:"access_token"`
@@ -39,7 +39,7 @@ func NewLoginUseCase(
 	createAccessToken CreateAccessTokenUseCase,
 ) LoginUseCase {
 	return func(req LoginRequest) (*LoginResponse, error) {
-		if err := service.Validate(req); err != nil {
+		if err := service.Validate.Struct(req); err != nil {
 			return nil, errors.Wrap(err, "validate login request failed")
 		}
 		user, err := repo.GetUser(req.Username)
@@ -56,8 +56,8 @@ func NewLoginUseCase(
 
 type (
 	RegisterRequest struct {
-		Username string `json:"username" validate:"email,required"`
-		Password string `json:"password" validate:"required"`
+		Username string `json:"username" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=8"`
 	}
 	RegisterResponse struct {
 		AccessToken string `json:"access_token"`
@@ -78,7 +78,7 @@ func NewRegisterUseCase(
 	createAccessToken CreateAccessTokenUseCase,
 ) RegisterUseCase {
 	return func(req RegisterRequest) (*RegisterResponse, error) {
-		if err := service.Validate(req); err != nil {
+		if err := service.Validate.Struct(req); err != nil {
 			return nil, errors.Wrap(err, "validate register request failed")
 		}
 		// NOTE: There's no checking if the user exists, because there should
@@ -104,6 +104,9 @@ type CreateAccessTokenUseCase func(user string) (string, error)
 
 func NewCreateAccessTokenUseCase(signer passport.Signer) CreateAccessTokenUseCase {
 	return func(user string) (string, error) {
+		if len(user) == 0 {
+			return "", errors.New("user is required")
+		}
 		role := api.RoleUser.String()
 		scope := api.Scopes(api.ScopeProfile, api.ScopeOpenID)
 		claims := signer.NewClaims(user, role, scope)
