@@ -13,7 +13,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	validator "gopkg.in/go-playground/validator.v9"
 
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/api/middleware"
@@ -65,8 +64,6 @@ func main() {
 		Semver:            cfg.Semver,
 	})
 
-	validate := validator.New()
-
 	r := gin.New()
 
 	// Setup middlewares.
@@ -90,13 +87,15 @@ func main() {
 
 	// Authentication endpoint.
 	{
-		opt := authn.Option{
-			Signer:    signer,
-			Repo:      authn.NewRepository(db),
-			Validator: validate,
-		}
-		svc := authn.NewService(opt)
-		ctl := authn.NewController(svc, signer)
+
+		repo := authn.NewRepository(db)
+		createAccessTokenUseCase := authn.NewCreateAccessTokenUseCase(signer)
+
+		loginUseCase := authn.NewLoginUseCase(repo, createAccessTokenUseCase)
+		postLogin := authn.NewPostLoginController(loginUseCase)
+
+		registerUseCase := authn.NewRegisterUseCase(repo, createAccessTokenUseCase)
+		postRegister := authn.NewPostRegisterController(registerUseCase)
 
 		// Endpoint throttled.
 		var (
@@ -110,8 +109,8 @@ func main() {
 		shutdowns = append(shutdowns, shutdown)
 
 		throttled := r.Group("/", middleware.RateLimiter(limiter))
-		throttled.POST("/login", ctl.PostLogin)
-		throttled.POST("/register", ctl.PostRegister)
+		throttled.POST("/login", postLogin)
+		throttled.POST("/register", postRegister)
 	}
 
 	// Books endpoint with multiple roles.
