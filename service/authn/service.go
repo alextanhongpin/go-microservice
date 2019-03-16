@@ -24,16 +24,14 @@ type (
 	LoginResponse struct {
 		AccessToken string `json:"access_token"`
 	}
+	LoginUseCase           func(LoginRequest) (*LoginResponse, error)
+	LoginUseCaseRepository interface {
+		GetUser(email string) (User, error)
+	}
 )
 
-// Login fulfils the User Login Use Case.
-// As a User,
-// I want to login into the application.
-type LoginUseCase func(LoginRequest) (*LoginResponse, error)
-type LoginUseCaseRepository interface {
-	GetUser(email string) (User, error)
-}
-
+// NewLoginUseCase returns a new LoginUseCase that includes the access token
+// creation use case.
 func NewLoginUseCase(
 	repo LoginUseCaseRepository,
 	createAccessToken CreateAccessTokenUseCase,
@@ -50,7 +48,7 @@ func NewLoginUseCase(
 			return nil, errors.Wrap(err, "verify password failed")
 		}
 		token, err := createAccessToken(user.ID)
-		return &LoginResponse{token}, errors.Wrap(err, "create token failed")
+		return &LoginResponse{token}, errors.Wrap(err, "create access token failed")
 	}
 }
 
@@ -62,16 +60,11 @@ type (
 	RegisterResponse struct {
 		AccessToken string `json:"access_token"`
 	}
+	RegisterUseCase           func(req RegisterRequest) (*RegisterResponse, error)
+	RegisterUseCaseRepository interface {
+		CreateUser(username, password string) (User, error)
+	}
 )
-
-// Register fulfils the Register User Use Case:
-// As a User,
-// I want to register a new User Account,
-// In order to gain access to the application.
-type RegisterUseCase func(req RegisterRequest) (*RegisterResponse, error)
-type RegisterUseCaseRepository interface {
-	CreateUser(username, password string) (User, error)
-}
 
 func NewRegisterUseCase(
 	repo RegisterUseCaseRepository,
@@ -96,10 +89,6 @@ func NewRegisterUseCase(
 	}
 }
 
-// CreateAccessToken fulfils the Authenticate User Use Case:
-// As a User,
-// I want to obtain a token,
-// When I successfully login the system.
 type CreateAccessTokenUseCase func(user string) (string, error)
 
 func NewCreateAccessTokenUseCase(signer passport.Signer) CreateAccessTokenUseCase {

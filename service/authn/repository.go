@@ -9,7 +9,10 @@ import (
 type (
 	// Repository represents the data access layer to the User repository.
 	Repository interface {
+		// Reader.
 		GetUser(email string) (User, error)
+
+		// Writer.
 		CreateUser(username, password string) (User, error)
 	}
 	// RepositoryImpl implements the Repository interface.
