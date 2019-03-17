@@ -84,9 +84,25 @@ We will have one base `.env.development` environent file that exports all the re
 MAKE_ENV=staging make your-command
 ```
 
+## Database
+
+TODO:
+
+- Prefer uuid over auto-incrementing id
+- Store uuid as `Binary(16)`
+- MySQL 8.0 and above has support for `uuid_to_bin(uuid(), true)` and `bin_to_uuid(uuid(), true)` functions. The second arguments is set to true, which will rearrange the time component of the uuid to enhance indexing performance (by ordering it chronologically). This only works for uuid v1.
+- MySQL uses uuid v1. If you are using a golang library to create the uuid externally, make sure the uuid used is the v1 version.
+- paging with cursor pagination
+- migrations files and execution
+
 ## Request ID
 
-TODO
+TODO:
+
+- reasons to have
+- usage example
+- lifecycle - creation to received
+- tracing with request id
 
 References:
 
@@ -99,6 +115,18 @@ TODO
 
 ## Logging
 
-TODO
+- debugging in development
+- format in production
+- centralized logging
+- removal of logs from certain endpoints, e.g. `/health`
+- value to noise signal ratio - not all logs are good. know what to log
+- log the request whenever there are errors - this allows us to trace which requests are causing the error. But remember not to log sensitive requests (passwords etc)
+- wrap the errors and print out the stack trace whenever an error occurred
 
-## Health
+## Health Endpoint
+
+Useful application metrics includes:
+
+- the git commit version - allows us to know what is the latest version of the application deployed
+- uptime - how long has the application been running before restarting
+- deployed_at - when was the application deployed (or when the docker image is built)

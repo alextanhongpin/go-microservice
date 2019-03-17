@@ -119,6 +119,7 @@ func main() {
 			UserInfo: usersvc.NewUserInfoUseCase(repo),
 		})
 		r.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
+		// r.GET("/users/:userID", basicAuthorizer.ctl.GetUsers)
 	}
 
 	// Books endpoint with multiple roles.
