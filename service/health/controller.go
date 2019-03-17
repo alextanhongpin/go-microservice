@@ -10,11 +10,11 @@ import (
 )
 
 type Controller struct {
-	cfg *config.Config
+	cfg *config.App
 }
 
 // NewController returns a new pointer to Controller.
-func NewController(c *config.Config) *Controller {
+func NewController(c *config.App) *Controller {
 	return &Controller{c}
 }
 

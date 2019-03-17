@@ -60,18 +60,20 @@ up:
 down:
 	@docker-compose down
 
+test:
+	go test -v ./...
 
 ## DB
 MIGRATION_FOLDER := "./migrations"
 create-migration-%:
 	@mkdir -p ${MIGRATION_FOLDER}
-	@goose -dir ${MIGRATION_FOLDER} create $* sql 
+	@goose -dir ${MIGRATION_FOLDER} create $* sql
 
 migrate:
-	@goose -dir ${MIGRATION_FOLDER} mysql "${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}?parseTime=true" up
+	@goose -dir ${MIGRATION_FOLDER} mysql "${DB_USER}:${DB_PASS}@tcp(${DB_HOST})/${DB_NAME}?parseTime=true" up
 
 rollback:
-	@goose -dir ${MIGRATION_FOLDER} mysql "${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}?parseTime=true" down
+	@goose -dir ${MIGRATION_FOLDER} mysql "${DB_USER}:${DB_PASS}@tcp(${DB_HOST})/${DB_NAME}?parseTime=true" down
 
 clean:
 	@rm -rf tmp

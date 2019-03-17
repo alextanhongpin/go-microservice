@@ -16,6 +16,7 @@ const (
 	// ReadOnly
 )
 
+// Roles represents a list of scopes for a particular user.
 type Roles map[Role][]string
 
 func (r Roles) Can(target string) (result []Role) {

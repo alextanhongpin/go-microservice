@@ -8,52 +8,55 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-// Config represent the global application configuration.
-type Config struct {
+// App represent the global application configuration.
+type App struct {
+	Name       string    `envconfig:"NAME" default:"yourapp"`
+	Audience   string    `envconfig:"AUDIENCE" required:"true"`
 	BuildDate  time.Time `envconfig:"BUILD_DATE"`
+	Credential string    `envconfig:"CREDENTIAL" required:"true"`
 	Env        string    `envconfig:"ENV" default:"development"`
+	Issuer     string    `envconfig:"ISSUER" required:"true"`
 	Port       string    `envconfig:"PORT" default:"8080"`
-	App        string    `envconfig:"APP" default:"yourapp"`
+	Secret     string    `envconfig:"SECRET" required:"true"`
+	Semver     string    `envconfig:"SEMVER" required:"true"`
 	Tag        string    `envconfig:"TAG"`
 	Hostname   string    `ignored:"true"`
 	StartAt    time.Time `ignored:"true"`
-	Issuer     string    `envconfig:"ISSUER" required:"true"`
-	Audience   string    `envconfig:"AUDIENCE" required:"true"`
-	Semver     string    `envconfig:"SEMVER" required:"true"`
-	Secret     string    `envconfig:"SECRET" required:"true"`
-	Credential string    `envconfig:"CREDENTIAL" required:"true"`
+
+	// Nested Option.
+	Database
 }
 
 // Uptime returns the uptime duration since the time it was deployed.
-func (c *Config) Uptime() string {
-	return time.Since(c.StartAt).String()
+func (a *App) Uptime() string {
+	return time.Since(a.StartAt).String()
 }
 
 // IsProduction returns true if the current environment is set to "production".
-func (c *Config) IsProduction() bool {
-	return c.Env == "production"
+func (a *App) IsProduction() bool {
+	return a.Env == "production"
 }
 
 // IsDevelopment returns true if the current environment is set to
 // "development".
-func (c *Config) IsDevelopment() bool {
-	return c.Env == "development"
+func (a *App) IsDevelopment() bool {
+	return a.Env == "development"
 }
 
 // New returns a new Config pointer with populated values. Will panic if the
 // required environment variables are not set.
-func New() *Config {
-	var cfg Config
-	err := envconfig.Process("", &cfg)
+func New() *App {
+	var app App
+	err := envconfig.Process("", &app)
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg.StartAt = time.Now()
+	app.StartAt = time.Now()
 
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg.Hostname = hostname
-	return &cfg
+	app.Hostname = hostname
+	return &app
 }

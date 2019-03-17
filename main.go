@@ -34,7 +34,7 @@ func main() {
 
 	// Create a namespace for the service running.
 	log := logger.New(cfg.Env,
-		zap.String("app", cfg.App),
+		zap.String("app", cfg.Name),
 		zap.String("host", cfg.Hostname))
 
 	defer log.Sync()
@@ -47,8 +47,8 @@ func main() {
 
 	var db *sql.DB
 	{
-		// This will panic if the environment variables are not set.
-		db = database.NewProduction()
+		// Type conversion.
+		db = database.NewProduction(database.Option(cfg.Database))
 		defer db.Close()
 
 		db.SetMaxOpenConns(10)
@@ -91,11 +91,10 @@ func main() {
 		repo := authn.NewRepository(db)
 		createAccessTokenUseCase := authn.NewCreateAccessTokenUseCase(signer)
 
-		loginUseCase := authn.NewLoginUseCase(repo, createAccessTokenUseCase)
-		postLogin := authn.NewPostLoginController(loginUseCase)
-
-		registerUseCase := authn.NewRegisterUseCase(repo, createAccessTokenUseCase)
-		postRegister := authn.NewPostRegisterController(registerUseCase)
+		ctl := authn.NewController(authn.UseCase{
+			Login:    authn.NewLoginUseCase(repo, createAccessTokenUseCase),
+			Register: authn.NewPostRegisterController(registerUseCase),
+		})
 
 		// Endpoint throttled.
 		var (
@@ -109,8 +108,8 @@ func main() {
 		shutdowns = append(shutdowns, shutdown)
 
 		throttled := r.Group("/", middleware.RateLimiter(limiter))
-		throttled.POST("/login", postLogin)
-		throttled.POST("/register", postRegister)
+		throttled.POST("/login", ctl.PostLogin)
+		throttled.POST("/register", ctl.PostRegister)
 	}
 
 	// Books endpoint with multiple roles.

@@ -3,7 +3,7 @@ package authn
 import (
 	"database/sql"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/alextanhongpin/go-microservice/api"
 )
 
 type (
@@ -47,7 +47,7 @@ func (r *RepositoryImpl) GetUser(email string) (User, error) {
 func (r *RepositoryImpl) CreateUser(username, password string) (User, error) {
 	var user User
 	// MySQL is using uuid v1.
-	user.ID = uuid.Must(uuid.NewV1()).String()
+	user.ID = api.NewUUID()
 	stmt := `
 		INSERT INTO user 
 			(id, email, hashed_password)

@@ -6,21 +6,13 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/kelseyhightower/envconfig"
-	"go.uber.org/zap"
 )
 
 type Option struct {
-	User string `envconfig:"DB_USER" required:"true"`
-	Pass string `envconfig:"DB_PASS" required:"true"`
-	Host string `envconfig:"DB_HOST" required:"true"`
-	Name string `envconfig:"DB_NAME" required:"true"`
-}
-
-func NewOption() (Option, error) {
-	var opt Option
-	err := envconfig.Process("", &opt)
-	return opt, err
+	User string
+	Pass string
+	Host string
+	Name string
 }
 
 func New(opt Option) (*sql.DB, error) {
@@ -42,27 +34,23 @@ func New(opt Option) (*sql.DB, error) {
 	return db, nil
 }
 
-func NewProduction() *sql.DB {
-	opt, err := NewOption()
-	if err != nil {
-		log.Fatal(err.Error(), zap.Error(err))
-	}
+func NewProduction(opt Option) *sql.DB {
 	db, err := New(opt)
 	if err != nil {
 		db.Close()
-		log.Fatal(err.Error(), zap.Error(err))
+		log.Fatal(err)
 	}
 	for i := 0; i < 3; i++ {
 		err = db.Ping()
 		if err == nil {
 			break
 		}
-		log.Printf("retrying db connection: attempt %d\n", i+1)
+		log.Printf("dbError: %+v, retry=%d\n", err, i+1)
 		time.Sleep(5 * time.Second)
 	}
 	if err != nil {
 		db.Close()
-		log.Fatal(err.Error(), zap.Error(err))
+		log.Fatal(err)
 	}
 	return db
 }
