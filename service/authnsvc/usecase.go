@@ -20,7 +20,6 @@ import (
 type UseCase struct {
 	Login    LoginUseCase
 	Register RegisterUseCase
-	UserInfo UserInfoUseCase
 }
 
 type (
@@ -112,23 +111,5 @@ func NewCreateAccessTokenUseCase(signer passport.Signer) CreateAccessTokenUseCas
 		claims := signer.NewClaims(user, role, scope)
 		accessToken, err := signer.Sign(claims)
 		return accessToken, errors.Wrap(err, "sign token failed")
-	}
-}
-
-type (
-	UserInfoUseCase           func(id string) (User, error)
-	UserInfoUseCaseRepository interface {
-		WithID(id string) (User, error)
-	}
-)
-
-func NewUserInfoUseCase(users UserInfoUseCaseRepository) UserInfoUseCase {
-	return func(id string) (u User, err error) {
-		if len(id) == 0 {
-			err = errors.New("id is required")
-			return
-		}
-		u, err = users.WithID(id)
-		return
 	}
 }

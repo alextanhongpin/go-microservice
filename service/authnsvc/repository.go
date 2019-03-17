@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	"github.com/alextanhongpin/go-microservice/api"
-	"go.uber.org/zap"
 )
 
 type (
@@ -12,7 +11,6 @@ type (
 	Repository interface {
 		// Reader.
 		WithEmail(email string) (User, error)
-		WithID(id string) (User, error)
 
 		// Writer.
 		Create(username, password string) (User, error)
@@ -63,30 +61,5 @@ func (r *RepositoryImpl) Create(username, password string) (User, error) {
 	if err != nil {
 		return u, err
 	}
-	return u, err
-}
-
-func (r *RepositoryImpl) WithID(id string) (User, error) {
-	zap.L().Debug("id is", zap.String("iwthId", id))
-	u := NewUser(id)
-	stmt := `
-		SELECT
-			BIN_TO_UUID(id, true) AS uuid,
-			name,
-			picture,
-			created_at,
-			birthdate
-		FROM 	user
-		WHERE 	id = UUID_TO_BIN(?, true)
-		LIMIT   1
-	`
-	err := r.db.QueryRow(stmt, id).Scan(
-		&u.ID,
-		&u.Name,
-		&u.Picture,
-		&u.CreatedAt,
-		&u.BirthDate,
-	)
-	zap.L().Debug("got user", zap.Any("user", u))
 	return u, err
 }

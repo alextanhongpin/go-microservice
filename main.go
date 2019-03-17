@@ -24,6 +24,7 @@ import (
 	"github.com/alextanhongpin/go-microservice/pkg/ratelimit"
 	"github.com/alextanhongpin/go-microservice/service/authnsvc"
 	"github.com/alextanhongpin/go-microservice/service/health"
+	"github.com/alextanhongpin/go-microservice/service/usersvc"
 )
 
 type Shutdown func(ctx context.Context)
@@ -94,7 +95,6 @@ func main() {
 		ctl := authnsvc.NewController(authnsvc.UseCase{
 			Login:    authnsvc.NewLoginUseCase(repo, createAccessTokenUseCase),
 			Register: authnsvc.NewRegisterUseCase(repo, createAccessTokenUseCase),
-			UserInfo: authnsvc.NewUserInfoUseCase(repo),
 		})
 
 		// Endpoint throttled.
@@ -111,6 +111,13 @@ func main() {
 		throttled := r.Group("/", middleware.RateLimiter(limiter))
 		throttled.POST("/login", ctl.PostLogin)
 		throttled.POST("/register", ctl.PostRegister)
+
+	}
+	{
+		repo := usersvc.NewRepository(db)
+		ctl := usersvc.NewController(usersvc.UseCase{
+			UserInfo: usersvc.NewUserInfoUseCase(repo),
+		})
 		r.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
 	}
 
