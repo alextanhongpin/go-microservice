@@ -48,7 +48,7 @@ func (ctl *Controller) PostRegister(c *gin.Context) {
 		ctx = c.Request.Context()
 		log = logger.WithContext(ctx)
 	)
-	res, err := c.UseCase.Register(req)
+	res, err := ctl.UseCase.Register(req)
 	if err != nil {
 		log.Error("register user failed", zap.Error(err))
 		api.ErrorJSON(c, errors.New("username or email is invalid"))

@@ -93,7 +93,7 @@ func main() {
 
 		ctl := authn.NewController(authn.UseCase{
 			Login:    authn.NewLoginUseCase(repo, createAccessTokenUseCase),
-			Register: authn.NewPostRegisterController(registerUseCase),
+			Register: authn.NewRegisterUseCase(repo, createAccessTokenUseCase),
 		})
 
 		// Endpoint throttled.
