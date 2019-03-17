@@ -34,6 +34,7 @@ mod: # Initialize go modules and update dependencies.
 	GO111MODULE=on go mod tidy 
 
 start: # Start the main application with the exported environment variables.
+	# @gin -p ${PORT} run main.go
 	@go run main.go
 
 

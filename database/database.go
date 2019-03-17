@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -53,4 +54,15 @@ func NewProduction(opt Option) *sql.DB {
 		log.Fatal(err)
 	}
 	return db
+}
+
+func IsNotFound(err error) bool {
+	return err == sql.ErrNoRows
+}
+
+func IsDuplicateEntry(err error) bool {
+	if mysqlError, ok := err.(*mysql.MySQLError); ok {
+		return mysqlError.Number == mysqlerr.ER_DUP_ENTRY
+	}
+	return false
 }

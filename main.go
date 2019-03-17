@@ -22,7 +22,7 @@ import (
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/go-microservice/pkg/passport"
 	"github.com/alextanhongpin/go-microservice/pkg/ratelimit"
-	"github.com/alextanhongpin/go-microservice/service/authn"
+	"github.com/alextanhongpin/go-microservice/service/authnsvc"
 	"github.com/alextanhongpin/go-microservice/service/health"
 )
 
@@ -88,17 +88,18 @@ func main() {
 	// Authentication endpoint.
 	{
 
-		repo := authn.NewRepository(db)
-		createAccessTokenUseCase := authn.NewCreateAccessTokenUseCase(signer)
+		repo := authnsvc.NewRepository(db)
+		createAccessTokenUseCase := authnsvc.NewCreateAccessTokenUseCase(signer)
 
-		ctl := authn.NewController(authn.UseCase{
-			Login:    authn.NewLoginUseCase(repo, createAccessTokenUseCase),
-			Register: authn.NewRegisterUseCase(repo, createAccessTokenUseCase),
+		ctl := authnsvc.NewController(authnsvc.UseCase{
+			Login:    authnsvc.NewLoginUseCase(repo, createAccessTokenUseCase),
+			Register: authnsvc.NewRegisterUseCase(repo, createAccessTokenUseCase),
+			UserInfo: authnsvc.NewUserInfoUseCase(repo),
 		})
 
 		// Endpoint throttled.
 		var (
-			interval     = ratelimit.Per(time.Minute, 5) // 5 req/minute
+			interval     = ratelimit.Per(time.Minute, 12) // 1 req every 5 seconds.
 			burst        = 1
 			limiter      = ratelimit.New(interval, burst)
 			every        = 1 * time.Minute
@@ -110,6 +111,7 @@ func main() {
 		throttled := r.Group("/", middleware.RateLimiter(limiter))
 		throttled.POST("/login", ctl.PostLogin)
 		throttled.POST("/register", ctl.PostRegister)
+		r.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
 	}
 
 	// Books endpoint with multiple roles.
@@ -127,6 +129,7 @@ func main() {
 		// // Endpoint with custom action.
 		// auth.POST("/:id/book:approve", ctl.ApproveBooks)
 	}
+
 	// Handle no route.
 	r.NoRoute(func(c *gin.Context) {
 		// TODO: Cleanup message.
@@ -139,7 +142,7 @@ func main() {
 	shutdown := grace.New(r, cfg.Port)
 	shutdowns = append(shutdowns, shutdown)
 
-	// Listen to the os signal for ctrl+c.
+	// Listen to the os signal for CTLR + C.
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -158,5 +161,4 @@ func main() {
 		}(shutdown)
 	}
 	wg.Wait()
-	log.Info("terminating")
 }

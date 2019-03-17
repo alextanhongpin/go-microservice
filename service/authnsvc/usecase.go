@@ -5,12 +5,13 @@
 // - loginUser: breaks the convention, since package name is preferable a noun.
 // - authz and authn is better.
 
-package authn
+package authnsvc
 
 import (
 	"github.com/pkg/errors"
 
 	"github.com/alextanhongpin/go-microservice/api"
+	"github.com/alextanhongpin/go-microservice/database"
 	"github.com/alextanhongpin/go-microservice/pkg/passport"
 	"github.com/alextanhongpin/go-microservice/service"
 	"github.com/alextanhongpin/passwd"
@@ -19,6 +20,7 @@ import (
 type UseCase struct {
 	Login    LoginUseCase
 	Register RegisterUseCase
+	UserInfo UserInfoUseCase
 }
 
 type (
@@ -31,21 +33,22 @@ type (
 	}
 	LoginUseCase           func(LoginRequest) (*LoginResponse, error)
 	LoginUseCaseRepository interface {
-		GetUser(email string) (User, error)
+		WithEmail(email string) (User, error)
 	}
 )
 
 // NewLoginUseCase returns a new LoginUseCase that includes the access token
 // creation use case.
 func NewLoginUseCase(
-	repo LoginUseCaseRepository,
+	users LoginUseCaseRepository,
 	createAccessToken CreateAccessTokenUseCase,
 ) LoginUseCase {
 	return func(req LoginRequest) (*LoginResponse, error) {
+		// TOOD: If login fails three times...
 		if err := service.Validate.Struct(req); err != nil {
 			return nil, errors.Wrap(err, "validate login request failed")
 		}
-		user, err := repo.GetUser(req.Username)
+		user, err := users.WithEmail(req.Username)
 		if err != nil {
 			return nil, errors.Wrap(err, "get user failed")
 		}
@@ -67,12 +70,12 @@ type (
 	}
 	RegisterUseCase           func(req RegisterRequest) (*RegisterResponse, error)
 	RegisterUseCaseRepository interface {
-		CreateUser(username, password string) (User, error)
+		Create(username, password string) (User, error)
 	}
 )
 
 func NewRegisterUseCase(
-	repo RegisterUseCaseRepository,
+	users RegisterUseCaseRepository,
 	createAccessToken CreateAccessTokenUseCase,
 ) RegisterUseCase {
 	return func(req RegisterRequest) (*RegisterResponse, error) {
@@ -85,8 +88,11 @@ func NewRegisterUseCase(
 		if err != nil {
 			return nil, errors.Wrap(err, "hash password failed")
 		}
-		user, err := repo.CreateUser(req.Username, hashedPassword)
+		user, err := users.Create(req.Username, hashedPassword)
 		if err != nil {
+			if database.IsDuplicateEntry(err) {
+				return nil, errors.New("user already exists")
+			}
 			return nil, errors.Wrap(err, "create user failed")
 		}
 		token, err := createAccessToken(user.ID)
@@ -106,5 +112,23 @@ func NewCreateAccessTokenUseCase(signer passport.Signer) CreateAccessTokenUseCas
 		claims := signer.NewClaims(user, role, scope)
 		accessToken, err := signer.Sign(claims)
 		return accessToken, errors.Wrap(err, "sign token failed")
+	}
+}
+
+type (
+	UserInfoUseCase           func(id string) (User, error)
+	UserInfoUseCaseRepository interface {
+		WithID(id string) (User, error)
+	}
+)
+
+func NewUserInfoUseCase(users UserInfoUseCaseRepository) UserInfoUseCase {
+	return func(id string) (u User, err error) {
+		if len(id) == 0 {
+			err = errors.New("id is required")
+			return
+		}
+		u, err = users.WithID(id)
+		return
 	}
 }

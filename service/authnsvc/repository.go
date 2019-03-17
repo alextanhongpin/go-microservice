@@ -1,19 +1,21 @@
-package authn
+package authnsvc
 
 import (
 	"database/sql"
 
 	"github.com/alextanhongpin/go-microservice/api"
+	"go.uber.org/zap"
 )
 
 type (
 	// Repository represents the data access layer to the User repository.
 	Repository interface {
 		// Reader.
-		GetUser(email string) (User, error)
+		WithEmail(email string) (User, error)
+		WithID(id string) (User, error)
 
 		// Writer.
-		CreateUser(username, password string) (User, error)
+		Create(username, password string) (User, error)
 	}
 	// RepositoryImpl implements the Repository interface.
 	RepositoryImpl struct {
@@ -27,10 +29,10 @@ func NewRepository(db *sql.DB) *RepositoryImpl {
 }
 
 // GetUser returns a User given a valid email.
-func (r *RepositoryImpl) GetUser(email string) (User, error) {
+func (r *RepositoryImpl) WithEmail(email string) (User, error) {
 	stmt := `
 		SELECT 
-			id, 
+			BIN_TO_UUID(id, true), 
 			hashed_password 
 		FROM user 
 		WHERE email = ?
@@ -44,22 +46,47 @@ func (r *RepositoryImpl) GetUser(email string) (User, error) {
 }
 
 // CreateUser creates a new User with the given username and password.
-func (r *RepositoryImpl) CreateUser(username, password string) (User, error) {
-	var user User
+func (r *RepositoryImpl) Create(username, password string) (User, error) {
+	var u User
 	// MySQL is using uuid v1.
-	user.ID = api.NewUUID()
+	u.ID = api.NewUUID()
 	stmt := `
 		INSERT INTO user 
 			(id, email, hashed_password)
 		VALUES (UUID_TO_BIN(?, true), ?, ?)
 	`
 	_, err := r.db.Exec(stmt,
-		user.ID,
+		u.ID,
 		username,
 		password,
 	)
 	if err != nil {
-		return user, err
+		return u, err
 	}
-	return user, err
+	return u, err
+}
+
+func (r *RepositoryImpl) WithID(id string) (User, error) {
+	zap.L().Debug("id is", zap.String("iwthId", id))
+	u := NewUser(id)
+	stmt := `
+		SELECT
+			BIN_TO_UUID(id, true) AS uuid,
+			name,
+			picture,
+			created_at,
+			birthdate
+		FROM 	user
+		WHERE 	id = UUID_TO_BIN(?, true)
+		LIMIT   1
+	`
+	err := r.db.QueryRow(stmt, id).Scan(
+		&u.ID,
+		&u.Name,
+		&u.Picture,
+		&u.CreatedAt,
+		&u.BirthDate,
+	)
+	zap.L().Debug("got user", zap.Any("user", u))
+	return u, err
 }
