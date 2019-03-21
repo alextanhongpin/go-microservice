@@ -12,9 +12,9 @@ import (
 
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/database"
-	"github.com/alextanhongpin/go-microservice/pkg/passport"
 	"github.com/alextanhongpin/go-microservice/service"
 	"github.com/alextanhongpin/passwd"
+	"github.com/alextanhongpin/pkg/gojwt"
 )
 
 type UseCase struct {
@@ -101,15 +101,18 @@ func NewRegisterUseCase(
 
 type CreateAccessTokenUseCase func(user string) (string, error)
 
-func NewCreateAccessTokenUseCase(signer passport.Signer) CreateAccessTokenUseCase {
+func NewCreateAccessTokenUseCase(signer gojwt.Signer) CreateAccessTokenUseCase {
 	return func(user string) (string, error) {
 		if len(user) == 0 {
 			return "", errors.New("user is required")
 		}
-		role := api.RoleUser.String()
-		scope := api.Scopes(api.ScopeProfile, api.ScopeOpenID)
-		claims := signer.NewClaims(user, role, scope)
-		accessToken, err := signer.Sign(claims)
+		accessToken, err := signer.Sign(func(c *gojwt.Claims) error {
+			c.StandardClaims.Subject = user
+			c.Scope = api.Scopes(api.ScopeProfile, api.ScopeOpenID)
+			// TODO: Determine role based on user role.
+			c.Role = api.RoleUser.String()
+			return nil
+		})
 		return accessToken, errors.Wrap(err, "sign token failed")
 	}
 }

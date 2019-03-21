@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -20,11 +22,11 @@ import (
 	"github.com/alextanhongpin/go-microservice/database"
 	"github.com/alextanhongpin/go-microservice/pkg/grace"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
-	"github.com/alextanhongpin/go-microservice/pkg/passport"
 	"github.com/alextanhongpin/go-microservice/pkg/ratelimit"
 	"github.com/alextanhongpin/go-microservice/service/authnsvc"
 	"github.com/alextanhongpin/go-microservice/service/health"
 	"github.com/alextanhongpin/go-microservice/service/usersvc"
+	"github.com/alextanhongpin/pkg/gojwt"
 )
 
 type Shutdown func(ctx context.Context)
@@ -56,14 +58,40 @@ func main() {
 		db.SetMaxIdleConns(5)
 		db.SetConnMaxLifetime(time.Hour)
 	}
-
-	signer := passport.New(passport.Option{
-		Secret:            []byte(cfg.Secret),
-		DurationInMinutes: 10080 * time.Minute,
-		Issuer:            cfg.Issuer,
-		Audience:          cfg.Audience,
-		Semver:            cfg.Semver,
-	})
+	var signer gojwt.Signer
+	{
+		var (
+			audience     = cfg.Audience
+			issuer       = cfg.Issuer
+			semver       = cfg.Semver
+			secret       = cfg.Secret
+			expiresAfter = 10080 * time.Minute // 1 Week.
+			scope        = api.ScopeDefault.String()
+			role         = api.RoleGuest.String()
+		)
+		opt := gojwt.Option{
+			Secret:       []byte(secret),
+			ExpiresAfter: expiresAfter,
+			DefaultClaims: &gojwt.Claims{
+				Semver: semver,
+				Scope:  scope,
+				Role:   role,
+				StandardClaims: jwt.StandardClaims{
+					Audience: audience,
+					Issuer:   issuer,
+				},
+			},
+			Validator: func(c *gojwt.Claims) error {
+				if c.Semver != semver ||
+					c.Issuer != issuer ||
+					c.Audience != audience {
+					return errors.New("invalid token")
+				}
+				return nil
+			},
+		}
+		signer = gojwt.New(opt)
+	}
 
 	r := gin.New()
 

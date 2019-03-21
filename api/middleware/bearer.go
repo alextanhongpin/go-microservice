@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/alextanhongpin/go-microservice/api"
-	"github.com/alextanhongpin/go-microservice/pkg/passport"
+	"github.com/alextanhongpin/pkg/gojwt"
 )
 
 const (
@@ -21,8 +21,8 @@ const (
 	UserContext  = contextKey("user")
 )
 
-func BearerAuthorizer(sign passport.Signer) gin.HandlerFunc {
-	checkAuthorization := func(auth string) (*passport.Claims, error) {
+func BearerAuthorizer(sign gojwt.Signer) gin.HandlerFunc {
+	checkAuthorization := func(auth string) (*gojwt.Claims, error) {
 		paths := strings.Split(auth, " ")
 		if len(paths) != 2 {
 			return nil, errors.New("missing authorization header")
