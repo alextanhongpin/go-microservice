@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/alextanhongpin/go-microservice/api"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )

@@ -3,9 +3,8 @@ package api
 import (
 	"net/http"
 
+	"github.com/alextanhongpin/pkg/requestid"
 	"github.com/gin-gonic/gin"
-
-	"github.com/alextanhongpin/go-microservice/pkg/reqid"
 )
 
 // Error represents a json error response.
@@ -24,7 +23,7 @@ func NewError(c *gin.Context, err error) *Error {
 	// us to trace the error by allowing the user (client-facing) to submit
 	// the returned code to ops when reporting the error.
 	ctx := c.Request.Context()
-	reqID, _ := reqid.FromContext(ctx)
+	reqID, _ := requestid.Value(ctx)
 	return &Error{
 		Code:    reqID,
 		Message: err.Error(),

@@ -18,12 +18,12 @@ import (
 	"github.com/alextanhongpin/go-microservice/config"
 	"github.com/alextanhongpin/go-microservice/database"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
-	"github.com/alextanhongpin/go-microservice/pkg/ratelimit"
 	"github.com/alextanhongpin/go-microservice/service/authnsvc"
 	"github.com/alextanhongpin/go-microservice/service/health"
 	"github.com/alextanhongpin/go-microservice/service/usersvc"
 	"github.com/alextanhongpin/pkg/gojwt"
 	"github.com/alextanhongpin/pkg/grace"
+	"github.com/alextanhongpin/pkg/ratelimiter"
 	"github.com/alextanhongpin/pkg/requestid"
 )
 
@@ -128,9 +128,9 @@ func main() {
 
 		// Endpoint throttled.
 		var (
-			interval     = ratelimit.Per(time.Minute, 12) // 1 req every 5 seconds.
+			interval     = ratelimiter.Per(time.Minute, 12) // 1 req every 5 seconds.
 			burst        = 1
-			limiter      = ratelimit.New(interval, burst)
+			limiter      = ratelimiter.New(interval, burst)
 			every        = 1 * time.Minute
 			expiresAfter = 1 * time.Minute
 		)

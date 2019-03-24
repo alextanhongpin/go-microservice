@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
-	"github.com/alextanhongpin/go-microservice/pkg/reqid"
+	"github.com/alextanhongpin/pkg/requestid"
 )
 
 // Logger is a customized version of https://github.com/gin-contrib/zap to
@@ -29,7 +29,7 @@ func Logger(log *zap.Logger, timeFormat string, utc bool) gin.HandlerFunc {
 			end = end.UTC()
 		}
 		ctx := c.Request.Context()
-		reqID, _ := reqid.FromContext(ctx)
+		reqID, _ := requestid.Value(ctx)
 		fields := []zap.Field{
 			zap.Int("status", c.Writer.Status()),
 			zap.String("method", c.Request.Method),

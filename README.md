@@ -22,6 +22,10 @@ Some thoughts on designing maintainable microservice with golang.
 - testing
 - validation
 
+## TODO:
+implement this
+- https://docs.microsoft.com/en-us/azure/architecture/patterns/
+
 ## Commit
 
 The commit messages are based on [Semantic Commit Messages](https://seesparkbox.com/foundry/semantic_commit_messages).

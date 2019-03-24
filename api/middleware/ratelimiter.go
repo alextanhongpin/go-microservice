@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/alextanhongpin/go-microservice/api"
-	"github.com/alextanhongpin/go-microservice/pkg/ratelimit"
+	ratelimit "github.com/alextanhongpin/pkg/ratelimiter"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -13,6 +13,8 @@ import (
 func RateLimiter(limiter ratelimit.Limiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		clientIP := c.ClientIP()
+		// For per path, consider concatenating the c.Request.URL.Path
+		// with the client IP.
 		visitor := limiter.GetVisitor(clientIP)
 		if !visitor.Allow() {
 			err := errors.Errorf(`client ip "%s" has too many requests`, clientIP)
