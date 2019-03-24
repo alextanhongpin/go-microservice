@@ -5,34 +5,30 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/xid"
 	"go.uber.org/zap"
 
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/api/middleware"
 	"github.com/alextanhongpin/go-microservice/config"
 	"github.com/alextanhongpin/go-microservice/database"
-	"github.com/alextanhongpin/go-microservice/pkg/grace"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/go-microservice/pkg/ratelimit"
 	"github.com/alextanhongpin/go-microservice/service/authnsvc"
 	"github.com/alextanhongpin/go-microservice/service/health"
 	"github.com/alextanhongpin/go-microservice/service/usersvc"
 	"github.com/alextanhongpin/pkg/gojwt"
+	"github.com/alextanhongpin/pkg/grace"
+	"github.com/alextanhongpin/pkg/requestid"
 )
 
-type Shutdown func(ctx context.Context)
-
 func main() {
-	var shutdowns []Shutdown
+	var shutdowns grace.Shutdowns
 	cfg := config.New()
 
 	// Create a namespace for the service running.
@@ -100,7 +96,12 @@ func main() {
 	r.Use(cors.Default())
 
 	// Custom middlewares.
-	r.Use(middleware.RequestIDProvider())
+	{
+		provider := requestid.RequestID(func() (string, error) {
+			return xid.New().String(), nil
+		})
+		r.Use(middleware.RequestIDProvider(provider))
+	}
 	r.Use(middleware.Logger(log, time.RFC3339, true))
 
 	bearerAuthorizer := middleware.BearerAuthorizer(signer)
@@ -134,7 +135,7 @@ func main() {
 			expiresAfter = 1 * time.Minute
 		)
 		shutdown := limiter.CleanupVisitor(every, expiresAfter)
-		shutdowns = append(shutdowns, shutdown)
+		shutdowns.Append(shutdown)
 
 		throttled := r.Group("/", middleware.RateLimiter(limiter))
 		throttled.POST("/login", ctl.PostLogin)
@@ -176,25 +177,18 @@ func main() {
 	})
 	// Graceful shutdown for the server.
 	shutdown := grace.New(r, cfg.Port)
-	shutdowns = append(shutdowns, shutdown)
+	shutdowns.Append(shutdown)
 
-	// Listen to the os signal for CTLR + C.
-	quit := make(chan os.Signal)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	<-grace.Signal()
+	// // Listen to the os signal for CTLR + C.
+	// quit := make(chan os.Signal)
+	// signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	// <-quit
 
 	// Create a global context cancellation to orchestrate graceful
 	// shutdown for different services.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var wg sync.WaitGroup
-	wg.Add(len(shutdowns))
-	for _, shutdown := range shutdowns {
-		go func(shutdown Shutdown) {
-			defer wg.Done()
-			shutdown(ctx)
-		}(shutdown)
-	}
-	wg.Wait()
+	shutdowns.Close(ctx)
 }
