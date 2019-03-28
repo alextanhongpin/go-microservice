@@ -3,7 +3,10 @@ services:
         db:
                 image: mysql:8.0.15
                 volumes:
+                        # Keep a local copy of the data.
                         - ./tmp/mysq:/var/lib/mysql
+                        # Run migration files when starting the container.
+                        - ./migrations:/docker-entrypoint-initdb.d
                 command: --default-authentication-plugin=mysql_native_password
                 ports:
                         - $DB_HOST:3306:3306

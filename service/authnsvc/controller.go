@@ -11,11 +11,11 @@ import (
 )
 
 type Controller struct {
-	UseCase
+	service *Service
 }
 
-func NewController(usecase UseCase) *Controller {
-	return &Controller{usecase}
+func NewController(service *Service) *Controller {
+	return &Controller{service}
 }
 
 func (ctl *Controller) PostLogin(c *gin.Context) {
@@ -28,7 +28,7 @@ func (ctl *Controller) PostLogin(c *gin.Context) {
 		ctx = c.Request.Context()
 		log = logger.WithContext(ctx)
 	)
-	res, err := ctl.UseCase.Login(req)
+	res, err := ctl.service.Login(ctx, req)
 	if err != nil {
 		log.Error("login user failed", zap.Error(err))
 		api.ErrorJSON(c, err)
@@ -47,7 +47,7 @@ func (ctl *Controller) PostRegister(c *gin.Context) {
 		ctx = c.Request.Context()
 		log = logger.WithContext(ctx)
 	)
-	res, err := ctl.UseCase.Register(req)
+	res, err := ctl.service.Register(req)
 	if err != nil {
 		log.Error("register user failed", zap.Error(err))
 		api.ErrorJSON(c, err)

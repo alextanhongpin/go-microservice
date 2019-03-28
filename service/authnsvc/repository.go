@@ -2,8 +2,10 @@ package authnsvc
 
 import (
 	"database/sql"
+	"log"
 
 	"github.com/alextanhongpin/go-microservice/api"
+	"github.com/alextanhongpin/go-microservice/pkg/gostmt"
 )
 
 type (
@@ -17,26 +19,23 @@ type (
 	}
 	// RepositoryImpl implements the Repository interface.
 	RepositoryImpl struct {
-		db *sql.DB
+		stmts gostmt.Statements
 	}
 )
 
 // NewRepository returns a new Repository.
 func NewRepository(db *sql.DB) *RepositoryImpl {
-	return &RepositoryImpl{db}
+	stmts, err := gostmt.Prepare(db, statements)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &RepositoryImpl{stmts}
 }
 
 // GetUser returns a User given a valid email.
 func (r *RepositoryImpl) WithEmail(email string) (User, error) {
-	stmt := `
-		SELECT 
-			BIN_TO_UUID(id, true), 
-			hashed_password 
-		FROM user 
-		WHERE email = ?
-	`
 	var user User
-	err := r.db.QueryRow(stmt, email).Scan(
+	err := r.stmts[withEmailStmt].QueryRow(email).Scan(
 		&user.ID,
 		&user.HashedPassword,
 	)
@@ -48,12 +47,7 @@ func (r *RepositoryImpl) Create(username, password string) (User, error) {
 	var u User
 	// MySQL is using uuid v1.
 	u.ID = api.NewUUID()
-	stmt := `
-		INSERT INTO user 
-			(id, email, hashed_password)
-		VALUES (UUID_TO_BIN(?, true), ?, ?)
-	`
-	_, err := r.db.Exec(stmt,
+	_, err := r.stmts[createStmt].Exec(
 		u.ID,
 		username,
 		password,

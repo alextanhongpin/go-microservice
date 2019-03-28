@@ -119,12 +119,8 @@ func main() {
 	{
 
 		repo := authnsvc.NewRepository(db)
-		createAccessTokenUseCase := authnsvc.NewCreateAccessTokenUseCase(signer)
-
-		ctl := authnsvc.NewController(authnsvc.UseCase{
-			Login:    authnsvc.NewLoginUseCase(repo, createAccessTokenUseCase),
-			Register: authnsvc.NewRegisterUseCase(repo, createAccessTokenUseCase),
-		})
+		svc := authnsvc.NewService(repo, signer)
+		ctl := authnsvc.NewController(svc)
 
 		// Endpoint throttled.
 		var (
