@@ -141,7 +141,7 @@ func newRepository(user authnsvc.User, err error) *repository {
 func (r *repository) WithEmail(email string) (authnsvc.User, error) {
 	defer func() {
 		r.invoked = true
-		r.invokedCount = 1
+		r.invokedCount++
 	}()
 	return r.user, r.err
 }

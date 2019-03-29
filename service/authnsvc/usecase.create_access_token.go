@@ -23,6 +23,10 @@ type (
 	}
 )
 
+func NewCreateAccessTokenUseCase(signer gojwt.Signer) *CreateAccessTokenUseCase {
+	return &CreateAccessTokenUseCase{signer}
+}
+
 func (c *CreateAccessTokenUseCase) CreateAccessToken(user string) (string, error) {
 	if len(user) == 0 {
 		return "", errors.New("user is required")
@@ -35,8 +39,4 @@ func (c *CreateAccessTokenUseCase) CreateAccessToken(user string) (string, error
 		return nil
 	})
 	return accessToken, errors.Wrap(err, "sign token failed")
-}
-
-func NewCreateAccessTokenUseCase(signer gojwt.Signer) *CreateAccessTokenUseCase {
-	return &CreateAccessTokenUseCase{signer}
 }

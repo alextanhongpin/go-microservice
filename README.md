@@ -127,6 +127,16 @@ TODO
 - log the request whenever there are errors - this allows us to trace which requests are causing the error. But remember not to log sensitive requests (passwords etc)
 - wrap the errors and print out the stack trace whenever an error occurred
 
+## UseCases
+
+- create a new usecase e.g. usecase.login.go
+- define the request/response pair
+- implement the function
+- create a factory for the use case
+- test the use case independently
+- add scenarios on the go
+
+
 ## Health Endpoint
 
 Useful application metrics includes:
