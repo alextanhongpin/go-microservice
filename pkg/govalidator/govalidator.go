@@ -1,4 +1,4 @@
-package service
+package govalidator
 
 import validator "gopkg.in/go-playground/validator.v9"
 

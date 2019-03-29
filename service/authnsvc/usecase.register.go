@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/alextanhongpin/go-microservice/database"
-	"github.com/alextanhongpin/go-microservice/service"
+	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
 	"github.com/alextanhongpin/passwd"
 )
 
@@ -23,34 +23,42 @@ type (
 	RegisterResponse struct {
 		AccessToken string `json:"access_token"`
 	}
-	RegisterUseCase    func(req RegisterRequest) (*RegisterResponse, error)
-	RegisterRepository interface {
+	registerRepository interface {
 		Create(username, password string) (User, error)
+	}
+	RegisterUseCase struct {
+		users registerRepository
+		createAccessTokenUseCase
 	}
 )
 
+func (r *RegisterUseCase) Register(req RegisterRequest) (*RegisterResponse, error) {
+	if err := govalidator.Validate.Struct(req); err != nil {
+		return nil, errors.Wrap(err, "validate register request failed")
+	}
+	// NOTE: There's no checking if the user exists, because there should
+	// be a constraint in the database that the username/email is unique.
+	hashedPassword, err := passwd.Hash(req.Password)
+	if err != nil {
+		return nil, errors.Wrap(err, "hash password failed")
+	}
+	user, err := r.users.Create(req.Username, hashedPassword)
+	if err != nil {
+		if database.IsDuplicateEntry(err) {
+			return nil, errors.New("user already exists")
+		}
+		return nil, errors.Wrap(err, "create user failed")
+	}
+	token, err := r.CreateAccessToken(user.ID)
+	return &RegisterResponse{token}, errors.Wrap(err, "create access token failed")
+}
+
 func NewRegisterUseCase(
-	users RegisterRepository,
-	createAccessToken CreateAccessTokenUseCase,
-) RegisterUseCase {
-	return func(req RegisterRequest) (*RegisterResponse, error) {
-		if err := service.Validate.Struct(req); err != nil {
-			return nil, errors.Wrap(err, "validate register request failed")
-		}
-		// NOTE: There's no checking if the user exists, because there should
-		// be a constraint in the database that the username/email is unique.
-		hashedPassword, err := passwd.Hash(req.Password)
-		if err != nil {
-			return nil, errors.Wrap(err, "hash password failed")
-		}
-		user, err := users.Create(req.Username, hashedPassword)
-		if err != nil {
-			if database.IsDuplicateEntry(err) {
-				return nil, errors.New("user already exists")
-			}
-			return nil, errors.Wrap(err, "create user failed")
-		}
-		token, err := createAccessToken(user.ID)
-		return &RegisterResponse{token}, errors.Wrap(err, "create access token failed")
+	users registerRepository,
+	createAccessToken createAccessTokenUseCase,
+) *RegisterUseCase {
+	return &RegisterUseCase{
+		users:                    users,
+		createAccessTokenUseCase: createAccessToken,
 	}
 }

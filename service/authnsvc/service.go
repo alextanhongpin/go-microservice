@@ -7,17 +7,36 @@
 
 package authnsvc
 
-import "github.com/alextanhongpin/pkg/gojwt"
+import (
+	"context"
 
-type Service struct {
-	Login    LoginUseCase
-	Register RegisterUseCase
-}
+	"github.com/alextanhongpin/pkg/gojwt"
+)
 
-func NewService(repo Repository, signer gojwt.Signer) *Service {
+type (
+	loginUseCase interface {
+		Login(ctx context.Context, req LoginRequest) (*LoginResponse, error)
+	}
+	registerUseCase interface {
+		Register(req RegisterRequest) (*RegisterResponse, error)
+	}
+	repository interface {
+		// Reader.
+		WithEmail(email string) (User, error)
+
+		// Writer.
+		Create(username, password string) (User, error)
+	}
+	Service struct {
+		loginUseCase
+		registerUseCase
+	}
+)
+
+func NewService(repo repository, signer gojwt.Signer) *Service {
 	createAccessToken := NewCreateAccessTokenUseCase(signer)
 	return &Service{
-		Login:    NewLoginUseCase(repo, createAccessToken),
-		Register: NewRegisterUseCase(repo, createAccessToken),
+		loginUseCase:    NewLoginUseCase(repo, createAccessToken),
+		registerUseCase: NewRegisterUseCase(repo, createAccessToken),
 	}
 }

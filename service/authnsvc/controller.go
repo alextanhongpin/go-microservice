@@ -10,12 +10,18 @@ import (
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 )
 
-type Controller struct {
-	service *Service
-}
+type (
+	service interface {
+		loginUseCase
+		registerUseCase
+	}
+	Controller struct {
+		service
+	}
+)
 
-func NewController(service *Service) *Controller {
-	return &Controller{service}
+func NewController(svc service) *Controller {
+	return &Controller{svc}
 }
 
 func (ctl *Controller) PostLogin(c *gin.Context) {

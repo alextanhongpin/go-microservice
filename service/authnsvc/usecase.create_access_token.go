@@ -14,20 +14,29 @@ import (
 	"github.com/alextanhongpin/pkg/gojwt"
 )
 
-type CreateAccessTokenUseCase func(user string) (string, error)
-
-func NewCreateAccessTokenUseCase(signer gojwt.Signer) CreateAccessTokenUseCase {
-	return func(user string) (string, error) {
-		if len(user) == 0 {
-			return "", errors.New("user is required")
-		}
-		accessToken, err := signer.Sign(func(c *gojwt.Claims) error {
-			c.StandardClaims.Subject = user
-			c.Scope = api.Scopes(api.ScopeProfile, api.ScopeOpenID)
-			// TODO: Determine role based on user role.
-			c.Role = api.RoleUser.String()
-			return nil
-		})
-		return accessToken, errors.Wrap(err, "sign token failed")
+type (
+	createAccessTokenUseCase interface {
+		CreateAccessToken(user string) (token string, err error)
 	}
+	CreateAccessTokenUseCase struct {
+		signer gojwt.Signer
+	}
+)
+
+func (c *CreateAccessTokenUseCase) CreateAccessToken(user string) (string, error) {
+	if len(user) == 0 {
+		return "", errors.New("user is required")
+	}
+	accessToken, err := c.signer.Sign(func(c *gojwt.Claims) error {
+		c.StandardClaims.Subject = user
+		c.Scope = api.Scopes(api.ScopeProfile, api.ScopeOpenID)
+		// TODO: Determine role based on user role.
+		c.Role = api.RoleUser.String()
+		return nil
+	})
+	return accessToken, errors.Wrap(err, "sign token failed")
+}
+
+func NewCreateAccessTokenUseCase(signer gojwt.Signer) *CreateAccessTokenUseCase {
+	return &CreateAccessTokenUseCase{signer}
 }

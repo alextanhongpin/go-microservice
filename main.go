@@ -175,16 +175,14 @@ func main() {
 	shutdown := grace.New(r, cfg.Port)
 	shutdowns.Append(shutdown)
 
+	// Listen to the os signal for CTLR + C.
 	<-grace.Signal()
-	// // Listen to the os signal for CTLR + C.
-	// quit := make(chan os.Signal)
-	// signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	// <-quit
 
 	// Create a global context cancellation to orchestrate graceful
 	// shutdown for different services.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// Close all goroutines and the http server gracefully.
 	shutdowns.Close(ctx)
 }

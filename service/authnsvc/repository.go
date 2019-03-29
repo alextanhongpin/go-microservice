@@ -9,31 +9,23 @@ import (
 )
 
 type (
-	// Repository represents the data access layer to the User repository.
-	Repository interface {
-		// Reader.
-		WithEmail(email string) (User, error)
-
-		// Writer.
-		Create(username, password string) (User, error)
-	}
-	// RepositoryImpl implements the Repository interface.
-	RepositoryImpl struct {
+	// Repository implements the Repository interface.
+	Repository struct {
 		stmts gostmt.Statements
 	}
 )
 
 // NewRepository returns a new Repository.
-func NewRepository(db *sql.DB) *RepositoryImpl {
+func NewRepository(db *sql.DB) *Repository {
 	stmts, err := gostmt.Prepare(db, statements)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &RepositoryImpl{stmts}
+	return &Repository{stmts}
 }
 
-// GetUser returns a User given a valid email.
-func (r *RepositoryImpl) WithEmail(email string) (User, error) {
+// WithEmail returns a User given a valid email.
+func (r *Repository) WithEmail(email string) (User, error) {
 	var user User
 	err := r.stmts[withEmailStmt].QueryRow(email).Scan(
 		&user.ID,
@@ -42,8 +34,8 @@ func (r *RepositoryImpl) WithEmail(email string) (User, error) {
 	return user, err
 }
 
-// CreateUser creates a new User with the given username and password.
-func (r *RepositoryImpl) Create(username, password string) (User, error) {
+// Create creates a new User with the given username and password.
+func (r *Repository) Create(username, password string) (User, error) {
 	var u User
 	// MySQL is using uuid v1.
 	u.ID = api.NewUUID()
