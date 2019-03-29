@@ -17,32 +17,34 @@ import (
 )
 
 type (
+	// LoginRequest ... (means self-explanatory)
 	LoginRequest struct {
 		Username string `json:"username" validate:"required,email"`
 		Password string `json:"password" validate:"required,min=8"`
 	}
+	// LoginResponse ...
 	LoginResponse struct {
-		AccessToken string `json:"access_token"`
+		User User `json:"user"`
 	}
 	// interfaces are lowercase - clients have to implement them
 	// themselves.
 	loginRepository interface {
 		WithEmail(email string) (User, error)
 	}
+	// LoginUseCase ...
 	LoginUseCase struct {
 		users loginRepository
-		// Included usecases.
-		usecase createAccessTokenUseCase
 	}
 )
 
-func NewLoginUseCase(users loginRepository, usecase createAccessTokenUseCase) *LoginUseCase {
+// NewLoginUseCase returns a new use case for login.
+func NewLoginUseCase(users loginRepository) *LoginUseCase {
 	return &LoginUseCase{
-		users:   users,
-		usecase: usecase,
+		users: users,
 	}
 }
 
+// Login checks if the user is authenticated.
 func (l *LoginUseCase) Login(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
 	if err := govalidator.Validate.Struct(req); err != nil {
 		return nil, errors.Wrap(err, "validate login request failed")
@@ -54,6 +56,5 @@ func (l *LoginUseCase) Login(ctx context.Context, req LoginRequest) (*LoginRespo
 	if err := passwd.Verify(req.Password, user.HashedPassword); err != nil {
 		return nil, errors.Wrap(err, "verify password failed")
 	}
-	token, err := l.usecase.CreateAccessToken(user.ID)
-	return &LoginResponse{token}, errors.Wrap(err, "create access token failed")
+	return &LoginResponse{user}, errors.Wrap(err, "verify password failed")
 }

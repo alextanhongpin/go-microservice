@@ -18,23 +18,32 @@ import (
 )
 
 type (
+	// RegisterRequest ...
 	RegisterRequest struct {
 		Username string `json:"username" validate:"required,email"`
 		Password string `json:"password" validate:"required,min=8"`
 	}
+	// RegisterResponse ...
 	RegisterResponse struct {
-		AccessToken string `json:"access_token"`
+		User User `json:"user"`
 	}
 	registerRepository interface {
 		Create(username, password string) (User, error)
 	}
+	// RegisterUseCase ...
 	RegisterUseCase struct {
 		users registerRepository
-		// Included usecases.
-		usecase createAccessTokenUseCase
 	}
 )
 
+// NewRegisterUseCase returns a new use case to register user.
+func NewRegisterUseCase(users registerRepository) *RegisterUseCase {
+	return &RegisterUseCase{
+		users: users,
+	}
+}
+
+// Register creates a new account for new users.
 func (r *RegisterUseCase) Register(ctx context.Context, req RegisterRequest) (*RegisterResponse, error) {
 	if err := govalidator.Validate.Struct(req); err != nil {
 		return nil, errors.Wrap(err, "validate register request failed")
@@ -52,16 +61,5 @@ func (r *RegisterUseCase) Register(ctx context.Context, req RegisterRequest) (*R
 		}
 		return nil, errors.Wrap(err, "create user failed")
 	}
-	token, err := r.usecase.CreateAccessToken(user.ID)
-	return &RegisterResponse{token}, errors.Wrap(err, "create access token failed")
-}
-
-func NewRegisterUseCase(
-	users registerRepository,
-	usecase createAccessTokenUseCase,
-) *RegisterUseCase {
-	return &RegisterUseCase{
-		users:   users,
-		usecase: usecase,
-	}
+	return &RegisterResponse{user}, errors.Wrap(err, "register user failed")
 }

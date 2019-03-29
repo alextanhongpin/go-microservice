@@ -38,10 +38,9 @@ func TestLoginRequest(t *testing.T) {
 func TestLogin(t *testing.T) {
 	Convey("UseCase Login", t, func() {
 		var (
-			email       = "john.doe@mail.com"
-			password    = "12345678"
-			userID      = "1"
-			accessToken = "xyz"
+			email    = "john.doe@mail.com"
+			password = "12345678"
+			userID   = "1"
 		)
 		// Build usecase.
 		Convey("given a registered User", func() {
@@ -50,8 +49,7 @@ func TestLogin(t *testing.T) {
 			So(err, ShouldBeNil)
 			user := authnsvc.User{ID: userID, HashedPassword: hashedPwd}
 			repo := newRepository(user, nil)
-			createAccessToken := newCreateAccessTokenUseCase(accessToken, nil)
-			usecase := authnsvc.NewLoginUseCase(repo, createAccessToken)
+			usecase := authnsvc.NewLoginUseCase(repo)
 
 			Convey("when the User enters a valid email and password", func() {
 				req := authnsvc.LoginRequest{
@@ -64,9 +62,7 @@ func TestLogin(t *testing.T) {
 					So(res, ShouldNotBeNil)
 					So(repo.invoked, ShouldBeTrue)
 					So(repo.invokedCount, ShouldEqual, 1)
-					So(createAccessToken.invoked, ShouldBeTrue)
-					So(createAccessToken.invokedCount, ShouldEqual, 1)
-					So(res.AccessToken, ShouldEqual, accessToken)
+					So(res.User.ID, ShouldEqual, userID)
 				})
 			})
 			Convey("when the User enters an invalid password (len < 8)", func() {
@@ -82,8 +78,6 @@ func TestLogin(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, "required")
 					So(repo.invoked, ShouldBeFalse)
 					So(repo.invokedCount, ShouldEqual, 0)
-					So(createAccessToken.invoked, ShouldBeFalse)
-					So(createAccessToken.invokedCount, ShouldEqual, 0)
 				})
 			})
 			Convey("when the User enters the wrong password", func() {
@@ -98,8 +92,6 @@ func TestLogin(t *testing.T) {
 					So(err.Error(), ShouldContainSubstring, "password do not match")
 					So(repo.invoked, ShouldBeTrue)
 					So(repo.invokedCount, ShouldEqual, 1)
-					So(createAccessToken.invoked, ShouldBeFalse)
-					So(createAccessToken.invokedCount, ShouldEqual, 0)
 				})
 			})
 			// TODO: When the user enters the wrong password three times.
@@ -107,7 +99,7 @@ func TestLogin(t *testing.T) {
 		Convey("given a unregistered User", func() {
 			var errUserDoesNotExist = errors.New("user does not exist")
 			repo := newRepository(authnsvc.User{}, errUserDoesNotExist)
-			usecase := authnsvc.NewLoginUseCase(repo, nil)
+			usecase := authnsvc.NewLoginUseCase(repo)
 			Convey("when the User enters a fake username and password", func() {
 				req := authnsvc.LoginRequest{
 					Username: "jane.doe@mail.com",
@@ -144,23 +136,4 @@ func (r *repository) WithEmail(email string) (authnsvc.User, error) {
 		r.invokedCount++
 	}()
 	return r.user, r.err
-}
-
-type createAccessTokenUseCase struct {
-	token        string
-	err          error
-	invoked      bool
-	invokedCount int
-}
-
-func newCreateAccessTokenUseCase(token string, err error) *createAccessTokenUseCase {
-	return &createAccessTokenUseCase{token, err, false, 0}
-}
-
-func (c *createAccessTokenUseCase) CreateAccessToken(user string) (token string, err error) {
-	defer func() {
-		c.invoked = true
-		c.invokedCount++
-	}()
-	return c.token, c.err
 }

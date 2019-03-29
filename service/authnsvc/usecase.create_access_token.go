@@ -11,28 +11,30 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/alextanhongpin/go-microservice/api"
+	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
 	"github.com/alextanhongpin/pkg/gojwt"
 )
 
 type (
-	createAccessTokenUseCase interface {
-		CreateAccessToken(user string) (token string, err error)
-	}
+	// CreateAccessTokenUseCase creates a new access token that last for
+	// the given duration for a specific user.
 	CreateAccessTokenUseCase struct {
 		signer gojwt.Signer
 	}
 )
 
+// NewCreateAccessTokenUseCase returns a new usecase to create access token.
 func NewCreateAccessTokenUseCase(signer gojwt.Signer) *CreateAccessTokenUseCase {
 	return &CreateAccessTokenUseCase{signer}
 }
 
-func (c *CreateAccessTokenUseCase) CreateAccessToken(user string) (string, error) {
-	if len(user) == 0 {
-		return "", errors.New("user is required")
+// CreateAccessToken creates a new token for the given user.
+func (c *CreateAccessTokenUseCase) CreateAccessToken(userID string) (string, error) {
+	if err := govalidator.Validate.Var(userID, "required"); err != nil {
+		return "", err
 	}
 	accessToken, err := c.signer.Sign(func(c *gojwt.Claims) error {
-		c.StandardClaims.Subject = user
+		c.StandardClaims.Subject = userID
 		c.Scope = api.Scopes(api.ScopeProfile, api.ScopeOpenID)
 		// TODO: Determine role based on user role.
 		c.Role = api.RoleUser.String()

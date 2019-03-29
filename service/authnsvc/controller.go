@@ -11,10 +11,6 @@ import (
 )
 
 type (
-	service interface {
-		loginUseCase
-		registerUseCase
-	}
 	Controller struct {
 		service
 	}
@@ -25,7 +21,11 @@ func NewController(svc service) *Controller {
 }
 
 func (ctl *Controller) PostLogin(c *gin.Context) {
-	var req LoginRequest
+	type request = LoginRequest
+	type response struct {
+		AccessToken string `json:"access_token"`
+	}
+	var req request
 	if err := c.BindJSON(&req); err != nil {
 		api.ErrorJSON(c, err)
 		return
@@ -34,17 +34,21 @@ func (ctl *Controller) PostLogin(c *gin.Context) {
 		ctx = c.Request.Context()
 		log = logger.WithContext(ctx)
 	)
-	res, err := ctl.service.Login(ctx, req)
+	accessToken, err := ctl.service.LoginWithAccessToken(ctx, req)
 	if err != nil {
 		log.Error("login user failed", zap.Error(err))
 		api.ErrorJSON(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, response{accessToken})
 }
 
 func (ctl *Controller) PostRegister(c *gin.Context) {
-	var req RegisterRequest
+	type request = RegisterRequest
+	type response struct {
+		AccessToken string `json:"access_token"`
+	}
+	var req request
 	if err := c.BindJSON(&req); err != nil {
 		api.ErrorJSON(c, err)
 		return
@@ -53,11 +57,11 @@ func (ctl *Controller) PostRegister(c *gin.Context) {
 		ctx = c.Request.Context()
 		log = logger.WithContext(ctx)
 	)
-	res, err := ctl.service.Register(ctx, req)
+	accessToken, err := ctl.service.RegisterWithAccessToken(ctx, req)
 	if err != nil {
 		log.Error("register user failed", zap.Error(err))
 		api.ErrorJSON(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, response{accessToken})
 }
