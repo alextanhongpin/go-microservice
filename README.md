@@ -20,7 +20,7 @@ Some thoughts on designing maintainable microservice with golang.
 - pkg vs model
 - [request id](#request-id)
 - testing
-- validation
+- [validation](#validation)
 
 ## TODO:
 implement this
@@ -79,6 +79,11 @@ TL;DR;
 - include the `.env` in the `.gitignore`, we do not want to commit sensitive info to git repository
 - there many libraries to parse and read environment config, use the one that is the most simple to use
 - pass the config down through DI (dependency injection) or params, **DO NOT** call it straight from `os.Getenv`
+- separate required and optional config
+- ensure there is a sane defaults for configs if the value is not provided
+- create separate .env file for different environment, do not place the configs for different environment in one file an comment them - you might forget to uncomment the production one and do damage there will executing the code
+- avoid putting production config locally, just staging and development
+- if unsure of the naming convention for different environment, use `dev`, `staging`, `qa`, and `prod`
 
 ## Working with different environment
 
@@ -88,9 +93,9 @@ We will have one base `.env.development` environent file that exports all the re
 MAKE_ENV=staging make your-command
 ```
 
-## Database
+- limit access to production environment (e.g. mysql dump/backup)
 
-TODO:
+## Database
 
 - Prefer uuid over auto-incrementing id
 - Store uuid as `Binary(16)`
@@ -98,15 +103,15 @@ TODO:
 - MySQL uses uuid v1. If you are using a golang library to create the uuid externally, make sure the uuid used is the v1 version.
 - paging with cursor pagination
 - migrations files and execution
+- use prepared statement for golang to check errors in statement quick
 
 ## Request ID
 
-TODO:
 
-- reasons to have
-- usage example
-- lifecycle - creation to received
-- tracing with request id
+- use a middleware to generate a unique request id for every request
+- pass the request id down through context, and make every function accepts context as the first argument
+- log the request id whenever there's an error, or when an operation succeeds to trace the steps
+- log the error with the request id so that you can trace the error steps back from the log
 
 References:
 
@@ -126,6 +131,17 @@ TODO
 - value to noise signal ratio - not all logs are good. know what to log
 - log the request whenever there are errors - this allows us to trace which requests are causing the error. But remember not to log sensitive requests (passwords etc)
 - wrap the errors and print out the stack trace whenever an error occurred
+- using global logger is okay, since logging happens in all layers of the system - passing them down to every layer is cumbersome
+
+## Validation
+
+- using global validator is okay, since validation is part of the business logic and is something you won't need to mock (?)
+- ensure the requests are validated before calling the service
+- validation should happen in the business logic layer, not controller. This makes testing easier, since it will reduce the negative conditions (service can only be executed if the validation pass), and we can test the service directly. Testing the controller is not an option (probably for integration testing, but for most cases, we want to test the business logic and skip the middleware setups for auth etc that is executed with the controller).
+- passing down struct is more convenient that individual arguments since we can validate the struct as whole rather than individual params. you can still pass down individual params, but have a struct within the service with a validation tag, assign those params to the struct and validate the struct.
+- ensure all conditions are met before calling the service - required fields should be clearly defined
+- trim the strings before checking the length to ensure empty strings with spaces is not passed in
+- for numbers, ensure it cannot be negative for pagination etc, always set a min max too for pagination to avoid abuse
 
 ## UseCases
 
@@ -135,7 +151,9 @@ TODO
 - create a factory for the use case
 - test the use case independently
 - add scenarios on the go
-
+- the service struct should hold all the use cases
+- combine usecases in the service (usecases with include statement)
+- better to mock a behavior than a dependency (e.g. rather than mocking a jwt provider/dependency, it is better to create a struct with the provider and a method that calls the provider, then create an interface on top of it)
 
 ## Health Endpoint
 
@@ -144,3 +162,49 @@ Useful application metrics includes:
 - the git commit version - allows us to know what is the latest version of the application deployed
 - uptime - how long has the application been running before restarting
 - deployed_at - when was the application deployed (or when the docker image is built)
+- do not put the database connection ping here (?)
+
+## Testing
+
+- to make mocking easier, pass in the struct that needs to be mocked
+
+```go
+
+package main
+
+import (
+	"fmt"
+)
+
+type mockSigner struct {
+	key          string
+	token        string
+	err          error
+	invoked      bool
+	invokedCount int
+}
+
+func (m *mockSigner) Sign(key string) (string, error) {
+	defer func() {
+		m.invoked = true
+		m.invokedCount++
+	}()
+	if m.key == key {
+		return m.token, nil
+	}
+	return m.token, m.err
+}
+
+type Signer interface {
+	Sign(key string) (string, error)
+}
+
+func main() {
+	m := mockSigner{
+		key:   "test",
+		token: "xyz",
+	}
+	res, _ := m.Sign("test")
+	fmt.Println(res)
+}
+```
