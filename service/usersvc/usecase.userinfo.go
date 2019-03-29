@@ -1,6 +1,10 @@
 package usersvc
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/alextanhongpin/go-microservice/pkg/gostrings"
+)
 
 type (
 	userInfoRepository interface {
@@ -16,8 +20,8 @@ func NewUserInfoUseCase(users userInfoRepository) *UserInfoUseCase {
 }
 
 func (u *UserInfoUseCase) UserInfo(id string) (*User, error) {
-	if len(id) == 0 {
-		return nil, errors.New("id id required")
+	if gostrings.IsEmpty(id) {
+		return nil, errors.New("id is required")
 	}
 	user, err := u.users.WithID(id)
 	return &user, err

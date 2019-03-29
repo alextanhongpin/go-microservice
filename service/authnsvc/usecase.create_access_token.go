@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/alextanhongpin/go-microservice/api"
-	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
+	"github.com/alextanhongpin/go-microservice/pkg/gostrings"
 	"github.com/alextanhongpin/pkg/gojwt"
 )
 
@@ -30,8 +30,8 @@ func NewCreateAccessTokenUseCase(signer gojwt.Signer) *CreateAccessTokenUseCase 
 
 // CreateAccessToken creates a new token for the given user.
 func (c *CreateAccessTokenUseCase) CreateAccessToken(userID string) (string, error) {
-	if err := govalidator.Validate.Var(userID, "required"); err != nil {
-		return "", err
+	if gostrings.IsEmpty(userID) {
+		return "", errors.New("user_id is required")
 	}
 	accessToken, err := c.signer.Sign(func(c *gojwt.Claims) error {
 		c.StandardClaims.Subject = userID
