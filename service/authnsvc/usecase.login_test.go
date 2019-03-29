@@ -75,7 +75,7 @@ func TestLogin(t *testing.T) {
 					Password: "",
 				}
 				So(len(req.Password), ShouldBeLessThan, 8)
-				Convey("then the system should return a validation error", func() {
+				Convey("then the system should respond with a validation error", func() {
 					res, err := usecase.Login(context.Background(), req)
 					So(res, ShouldBeNil)
 					So(err.Error(), ShouldContainSubstring, "Password")
@@ -92,7 +92,7 @@ func TestLogin(t *testing.T) {
 					Password: "87654321",
 				}
 				So(req.Password, ShouldNotEqual, password)
-				Convey("then the system should return an error", func() {
+				Convey("then the system should respond with an error", func() {
 					res, err := usecase.Login(context.Background(), req)
 					So(res, ShouldBeNil)
 					So(err.Error(), ShouldContainSubstring, "password do not match")
@@ -104,20 +104,22 @@ func TestLogin(t *testing.T) {
 			})
 			// TODO: When the user enters the wrong password three times.
 		})
-		Convey("given a non registered user", func() {
+		Convey("given a unregistered User", func() {
 			var errUserDoesNotExist = errors.New("user does not exist")
 			repo := newRepository(authnsvc.User{}, errUserDoesNotExist)
 			usecase := authnsvc.NewLoginUseCase(repo, nil)
-			Convey("when the user enters a fake username and password", func() {
+			Convey("when the User enters a fake username and password", func() {
 				req := authnsvc.LoginRequest{
 					Username: "jane.doe@mail.com",
 					Password: "xyzabc123",
 				}
-				res, err := usecase.Login(context.Background(), req)
-				So(res, ShouldBeNil)
-				So(err.Error(), ShouldContainSubstring, errUserDoesNotExist.Error())
-				So(repo.invoked, ShouldBeTrue)
-				So(repo.invokedCount, ShouldEqual, 1)
+				Convey("then the system should respond with an error", func() {
+					res, err := usecase.Login(context.Background(), req)
+					So(res, ShouldBeNil)
+					So(err.Error(), ShouldContainSubstring, errUserDoesNotExist.Error())
+					So(repo.invoked, ShouldBeTrue)
+					So(repo.invokedCount, ShouldEqual, 1)
+				})
 			})
 		})
 	})

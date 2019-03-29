@@ -16,7 +16,7 @@ var statements = gostmt.Raw{
 		WHERE 	email = ?
 	`,
 	createStmt: `
-		INSERT INTO user 
+		INSERT 	INTO user 
 			(id, email, hashed_password)
 		VALUES 	(UUID_TO_BIN(?, true), ?, ?)
 	`,
