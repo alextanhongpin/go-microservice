@@ -18,7 +18,7 @@ type (
 		Login(ctx context.Context, req LoginRequest) (*LoginResponse, error)
 	}
 	registerUseCase interface {
-		Register(req RegisterRequest) (*RegisterResponse, error)
+		Register(ctx context.Context, req RegisterRequest) (*RegisterResponse, error)
 	}
 	repository interface {
 		// Reader.

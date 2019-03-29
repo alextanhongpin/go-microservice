@@ -8,6 +8,8 @@
 package authnsvc
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 
 	"github.com/alextanhongpin/go-microservice/database"
@@ -28,11 +30,12 @@ type (
 	}
 	RegisterUseCase struct {
 		users registerRepository
-		createAccessTokenUseCase
+		// Included usecases.
+		usecase createAccessTokenUseCase
 	}
 )
 
-func (r *RegisterUseCase) Register(req RegisterRequest) (*RegisterResponse, error) {
+func (r *RegisterUseCase) Register(ctx context.Context, req RegisterRequest) (*RegisterResponse, error) {
 	if err := govalidator.Validate.Struct(req); err != nil {
 		return nil, errors.Wrap(err, "validate register request failed")
 	}
@@ -49,16 +52,16 @@ func (r *RegisterUseCase) Register(req RegisterRequest) (*RegisterResponse, erro
 		}
 		return nil, errors.Wrap(err, "create user failed")
 	}
-	token, err := r.CreateAccessToken(user.ID)
+	token, err := r.usecase.CreateAccessToken(user.ID)
 	return &RegisterResponse{token}, errors.Wrap(err, "create access token failed")
 }
 
 func NewRegisterUseCase(
 	users registerRepository,
-	createAccessToken createAccessTokenUseCase,
+	usecase createAccessTokenUseCase,
 ) *RegisterUseCase {
 	return &RegisterUseCase{
-		users:                    users,
-		createAccessTokenUseCase: createAccessToken,
+		users:   users,
+		usecase: usecase,
 	}
 }

@@ -53,7 +53,7 @@ func (ctl *Controller) PostRegister(c *gin.Context) {
 		ctx = c.Request.Context()
 		log = logger.WithContext(ctx)
 	)
-	res, err := ctl.service.Register(req)
+	res, err := ctl.service.Register(ctx, req)
 	if err != nil {
 		log.Error("register user failed", zap.Error(err))
 		api.ErrorJSON(c, err)

@@ -10,26 +10,39 @@ import (
 	"go.uber.org/zap"
 )
 
-type Controller struct {
-	UseCase
-}
+type (
+	service interface {
+		getUsersUseCase
+		userInfoUseCase
+	}
 
-func NewController(usecase UseCase) *Controller {
-	return &Controller{usecase}
+	Controller struct {
+		service
+	}
+)
+
+func NewController(svc service) *Controller {
+	return &Controller{svc}
 }
 
 func (ctl *Controller) PostUserInfo(c *gin.Context) {
 	type response struct {
-		Data User `json:"data"`
+		Data *User `json:"data"`
 	}
-	ctx := c.Request.Context()
+	var (
+		ctx = c.Request.Context()
+		log = logger.WithContext(ctx)
+	)
 	id, _ := middleware.UserContext.Value(ctx)
-	res, err := ctl.UseCase.UserInfo(id)
-	log := logger.WithContext(ctx)
+	res, err := ctl.service.UserInfo(id)
 	if err != nil {
-		log.Error("get userinfo failed", zap.Error(err))
+		log.Error("post userinfo failed", zap.Error(err))
 		api.ErrorJSON(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, response{res})
+}
+
+func (ctl *Controller) GetUsers(c *gin.Context) {
+	c.JSON(http.StatusOK, nil)
 }

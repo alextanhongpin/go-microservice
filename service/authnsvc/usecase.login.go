@@ -31,9 +31,17 @@ type (
 	}
 	LoginUseCase struct {
 		users loginRepository
-		createAccessTokenUseCase
+		// Included usecases.
+		usecase createAccessTokenUseCase
 	}
 )
+
+func NewLoginUseCase(users loginRepository, usecase createAccessTokenUseCase) *LoginUseCase {
+	return &LoginUseCase{
+		users:   users,
+		usecase: usecase,
+	}
+}
 
 func (l *LoginUseCase) Login(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
 	if err := govalidator.Validate.Struct(req); err != nil {
@@ -46,13 +54,6 @@ func (l *LoginUseCase) Login(ctx context.Context, req LoginRequest) (*LoginRespo
 	if err := passwd.Verify(req.Password, user.HashedPassword); err != nil {
 		return nil, errors.Wrap(err, "verify password failed")
 	}
-	token, err := l.CreateAccessToken(user.ID)
+	token, err := l.usecase.CreateAccessToken(user.ID)
 	return &LoginResponse{token}, errors.Wrap(err, "create access token failed")
-}
-
-func NewLoginUseCase(users loginRepository, createAccessToken createAccessTokenUseCase) *LoginUseCase {
-	return &LoginUseCase{
-		users:                    users,
-		createAccessTokenUseCase: createAccessToken,
-	}
 }

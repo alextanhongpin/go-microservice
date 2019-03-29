@@ -1,34 +1,29 @@
 package usersvc
 
-import "database/sql"
+import (
+	"database/sql"
+	"log"
+
+	"github.com/alextanhongpin/go-microservice/pkg/gostmt"
+)
 
 type (
-	Repository interface {
-		WithID(id string) (User, error)
-	}
-	RepositoryImpl struct {
-		db *sql.DB
+	Repository struct {
+		stmts gostmt.Statements
 	}
 )
 
-func NewRepository(db *sql.DB) *RepositoryImpl {
-	return &RepositoryImpl{db}
+func NewRepository(db *sql.DB) *Repository {
+	stmts, err := gostmt.Prepare(db, statements)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &Repository{stmts}
 }
 
-func (r *RepositoryImpl) WithID(id string) (User, error) {
+func (r *Repository) WithID(id string) (User, error) {
 	var u User
-	stmt := `
-		SELECT
-			BIN_TO_UUID(id, true) AS uuid,
-			name,
-			picture,
-			created_at,
-			birthdate
-		FROM 	user
-		WHERE 	id = UUID_TO_BIN(?, true)
-		LIMIT   1
-	`
-	err := r.db.QueryRow(stmt, id).Scan(
+	err := r.stmts[withID].QueryRow(id).Scan(
 		&u.ID,
 		&u.Name,
 		&u.Picture,
@@ -38,6 +33,6 @@ func (r *RepositoryImpl) WithID(id string) (User, error) {
 	return u, err
 }
 
-func (r *RepositoryImpl) BelongingToPage() ([]User, error) {
+func (r *Repository) BelongingToPage() ([]User, error) {
 	return nil, nil
 }

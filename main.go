@@ -140,9 +140,8 @@ func main() {
 	}
 	{
 		repo := usersvc.NewRepository(db)
-		ctl := usersvc.NewController(usersvc.UseCase{
-			UserInfo: usersvc.NewUserInfoUseCase(repo),
-		})
+		svc := usersvc.NewService(repo)
+		ctl := usersvc.NewController(svc)
 		r.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
 		// r.GET("/users/:userID", basicAuthorizer.ctl.GetUsers)
 	}
