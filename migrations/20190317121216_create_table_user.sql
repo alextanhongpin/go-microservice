@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS user (
 	profile VARCHAR(2083) NOT NULL DEFAULT '' COMMENT "URL of the End-User's profile page",
 	picture VARCHAR(255) NOT NULL DEFAULT '',
 	website VARCHAR(2083) NOT NULL DEFAULT '' COMMENT "URL of the End-User's Web page or blog",
-	gender VARCHAR(16) NOT NULL DEFAULT '' COMMENT "End-User's gender (male|female|others)",
+	gender CHAR(1) NOT NULL DEFAULT '' COMMENT "End-User's gender (m|f|o|x)",
 	birthdate VARCHAR(10) NOT NULL DEFAULT '' COMMENT "End-User's birthday, represented as an ISO 8601:2004 [ISO8601?2004] YYYY-MM-DD format. The year MAY be 0000, indicating that it is omitted",
 	zoneinfo VARCHAR(32) NOT NULL DEFAULT '' COMMENT "String from zoneinfo [zoneinfo] time zone database representing the End-User's time zone. For example, Europe/Paris or America/Los_Angeles",
 	locale VARCHAR(35) NOT NULL DEFAULT '' COMMENT "End-User's locale, represented as a BCP47 [RFC5646] language tag. This is typically an ISO 639-1 Alpha-2 [ISO639?1] language code in lowercase and an ISO 3166-1 Alpha-2 [ISO3166?1] country code in uppercase, separated by a dash. For example, en-US or fr-CA. As a compatibility note, some implementations have used an underscore as the separator rather than a dash, for example, en_US",
