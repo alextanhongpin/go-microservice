@@ -208,3 +208,7 @@ func main() {
 	fmt.Println(res)
 }
 ```
+
+## Roles and Scopes
+
+Roles and scopes limits the API access to certain users, whether it is authenticated or not. Each API will have it's own scope (grouped by usecases), and only certain roles can access it. 
