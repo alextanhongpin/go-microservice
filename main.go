@@ -9,6 +9,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
 	"go.uber.org/zap"
@@ -170,6 +171,9 @@ func main() {
 			"message": "Page not found",
 		})
 	})
+	// Register pprof.
+	pprof.Register(r)
+
 	// Graceful shutdown for the server.
 	shutdown := grace.New(r, cfg.Port)
 	shutdowns.Append(shutdown)
