@@ -12,7 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/alextanhongpin/go-microservice/database"
+	"github.com/alextanhongpin/go-microservice/infrastructure"
 	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
 	"github.com/alextanhongpin/passwd"
 )
@@ -56,7 +56,7 @@ func (r *RegisterUseCase) Register(ctx context.Context, req RegisterRequest) (*R
 	}
 	user, err := r.users.Create(req.Username, hashedPassword)
 	if err != nil {
-		if database.IsDuplicateEntry(err) {
+		if infrastructure.IsDuplicateEntry(err) {
 			return nil, errors.New("user already exists")
 		}
 		return nil, errors.Wrap(err, "create user failed")

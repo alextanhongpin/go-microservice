@@ -6,15 +6,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/alextanhongpin/go-microservice/config"
+	"github.com/alextanhongpin/go-microservice/infrastructure"
 )
 
 type Controller struct {
-	cfg *config.App
+	cfg *infrastructure.Config
 }
 
 // NewController returns a new pointer to Controller.
-func NewController(c *config.App) *Controller {
+func NewController(c *infrastructure.Config) *Controller {
 	return &Controller{c}
 }
 

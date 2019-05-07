@@ -1,4 +1,4 @@
-package database
+package infrastructure
 
 import (
 	"database/sql"
@@ -16,7 +16,7 @@ type Option struct {
 	Name string
 }
 
-func New(opt Option) (*sql.DB, error) {
+func NewDatabase(opt Option) (*sql.DB, error) {
 	cfg := mysql.Config{
 		User:      opt.User,
 		Passwd:    opt.Pass,
@@ -35,8 +35,8 @@ func New(opt Option) (*sql.DB, error) {
 	return db, nil
 }
 
-func NewProduction(opt Option) *sql.DB {
-	db, err := New(opt)
+func NewProductionDatabase(opt Option) *sql.DB {
+	db, err := NewDatabase(opt)
 	if err != nil {
 		db.Close()
 		log.Fatal(err)

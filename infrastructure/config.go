@@ -1,4 +1,4 @@
-package config
+package infrastructure
 
 import (
 	"log"
@@ -8,8 +8,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-// App represent the global application configuration.
-type App struct {
+// Config represent the global application configuration.
+type Config struct {
 	Name       string    `envconfig:"NAME" default:"yourapp"`
 	Audience   string    `envconfig:"AUDIENCE" required:"true"`
 	BuildDate  time.Time `envconfig:"BUILD_DATE"`
@@ -27,36 +27,43 @@ type App struct {
 	Database
 }
 
+type Database struct {
+	User string `envconfig:"DB_USER" required:"true"`
+	Pass string `envconfig:"DB_PASS" required:"true"`
+	Host string `envconfig:"DB_HOST" required:"true"`
+	Name string `envconfig:"DB_NAME" required:"true"`
+}
+
 // Uptime returns the uptime duration since the time it was deployed.
-func (a *App) Uptime() string {
-	return time.Since(a.StartAt).String()
+func (c *Config) Uptime() string {
+	return time.Since(c.StartAt).String()
 }
 
 // IsProduction returns true if the current environment is set to "production".
-func (a *App) IsProduction() bool {
-	return a.Env == "production"
+func (c *Config) IsProduction() bool {
+	return c.Env == "production"
 }
 
 // IsDevelopment returns true if the current environment is set to
 // "development".
-func (a *App) IsDevelopment() bool {
-	return a.Env == "development"
+func (c *Config) IsDevelopment() bool {
+	return c.Env == "development"
 }
 
-// New returns a new Config pointer with populated values. Will panic if the
+// NewConfig returns a new Config pointer with populated values. Will panic if the
 // required environment variables are not set.
-func New() *App {
-	var app App
-	err := envconfig.Process("", &app)
+func NewConfig() *Config {
+	var cfg Config
+	err := envconfig.Process("", &cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-	app.StartAt = time.Now()
+	cfg.StartAt = time.Now()
 
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Fatal(err)
 	}
-	app.Hostname = hostname
-	return &app
+	cfg.Hostname = hostname
+	return &cfg
 }
