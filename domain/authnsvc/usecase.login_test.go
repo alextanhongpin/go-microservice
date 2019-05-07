@@ -7,8 +7,9 @@ import (
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 
+	"github.com/alextanhongpin/go-microservice/domain/authnsvc"
 	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
-	"github.com/alextanhongpin/go-microservice/service/authnsvc"
+
 	"github.com/alextanhongpin/passwd"
 )
 
