@@ -9,11 +9,13 @@ import (
 	"github.com/alextanhongpin/go-microservice/domain/health"
 	"github.com/alextanhongpin/go-microservice/domain/usersvc"
 	"github.com/alextanhongpin/go-microservice/infrastructure"
+	"github.com/alextanhongpin/pkg/grace"
 	"github.com/alextanhongpin/pkg/ratelimiter"
 )
 
 func main() {
 	infra := infrastructure.New()
+	// Gracefully terminate all dependencies, together with the server.
 	defer infra.Shutdown()
 
 	var (
@@ -36,7 +38,6 @@ func main() {
 
 	// Authentication endpoint.
 	{
-
 		repo := authnsvc.NewRepository(db)
 		svc := authnsvc.NewService(repo, signer)
 		ctl := authnsvc.NewController(svc)
@@ -81,4 +82,13 @@ func main() {
 		// auth.POST("/:id/book:approve", ctl.ApproveBooks)
 	}
 
+	// Starts a new server with the given port. Returns a shutdown method
+	// for the server.
+	shutdown := grace.New(r, cfg.Port)
+
+	// Coordinate server shutdown with the infrastructure dependencies.
+	infra.OnShutdown(shutdown)
+
+	// Listen to the os signal for CTLR + C.
+	<-grace.Signal()
 }

@@ -26,17 +26,19 @@ import (
 type Infrastructure struct {
 	config *Config
 	db     *sql.DB
-	router *gin.Engine
+	// router *gin.Engine
 	// ? Is supervisor a better naming?
 	shutdowns grace.Shutdowns
 	signer    gojwt.Signer
 	logger    *zap.Logger
 
 	// ! Some infrastructure should only be created once per struct. But
-	// this leads to a massive "once" fields.
-	onceConfig   sync.Once
-	onceDB       sync.Once
-	onceRouter   sync.Once
+	// this leads to a massive "once" fields. This fields are commonly
+	// called enablers, which differentiates themselves from factories,
+	// where multiple instances can be created.
+	onceConfig sync.Once
+	onceDB     sync.Once
+	// onceRouter   sync.Once
 	onceShutdown sync.Once
 	onceSigner   sync.Once
 	onceLogger   sync.Once
@@ -76,8 +78,6 @@ func (i *Infrastructure) OnShutdown(fn grace.Shutdown) {
 
 func (i *Infrastructure) Shutdown() {
 	i.onceShutdown.Do(func() {
-		// Listen to the os signal for CTLR + C.
-		<-grace.Signal()
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
@@ -149,43 +149,28 @@ func (i *Infrastructure) Signer() gojwt.Signer {
 }
 
 // TODO: Separate the router from the infrastructure. The router, controllers
-// etc belongs to the application.
+// etc belongs to the application. This is a factory.
 func (i *Infrastructure) Router() *gin.Engine {
-	i.onceRouter.Do(func() {
+	r := gin.New()
 
-		r := gin.New()
-		// Register middlewares.
-		r.Use(gin.Recovery())
-		r.Use(cors.Default())
+	r.Use(gin.Recovery())
+	r.Use(cors.Default())
 
-		// Register pprof.
-		pprof.Register(r)
-
-		// Custom middlewares.
-		{
-			provider := requestid.RequestID(func() (string, error) {
-				return xid.New().String(), nil
-			})
-			r.Use(middleware.RequestIDProvider(provider))
-		}
-		log := i.Logger()
-		r.Use(middleware.Logger(log, time.RFC3339, true))
-
-		// Handle no route.
-		r.NoRoute(func(c *gin.Context) {
-			// TODO: Cleanup message.
-			c.JSON(http.StatusNotFound, gin.H{
-				"code":    "PAGE_NOT_FOUND",
-				"message": "Page not found",
-			})
+	// Custom middlewares.
+	r.Use(middleware.Logger(i.Logger(), time.RFC3339, true))
+	r.Use(middleware.RequestIDProvider(
+		requestid.RequestID(func() (string, error) {
+			return xid.New().String(), nil
+		}),
+	))
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"code":    "PAGE_NOT_FOUND",
+			"message": "Page not found",
 		})
-
-		cfg := i.Config()
-		shutdown := grace.New(r, cfg.Port)
-		i.OnShutdown(shutdown)
-		i.router = r
 	})
-	return i.router
+	pprof.Register(r)
+	return r
 }
 
 // Factories for repositories, use cases etc should be created here.
