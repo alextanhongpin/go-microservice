@@ -3,19 +3,17 @@ package infrastructure
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/api/middleware"
+	"github.com/alextanhongpin/go-microservice/domain/usersvc"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/pkg/gojwt"
 	"github.com/alextanhongpin/pkg/grace"
 	"github.com/alextanhongpin/pkg/requestid"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
@@ -112,38 +110,7 @@ func (i *Infrastructure) Database() *sql.DB {
 
 func (i *Infrastructure) Signer() gojwt.Signer {
 	i.onceSigner.Do(func() {
-		var (
-			cfg          = i.Config()
-			audience     = cfg.Audience
-			issuer       = cfg.Issuer
-			semver       = cfg.Semver
-			secret       = cfg.Secret
-			expiresAfter = 10080 * time.Minute // 1 Week.
-			scope        = api.ScopeDefault.String()
-			role         = api.RoleGuest.String()
-		)
-		opt := gojwt.Option{
-			Secret:       []byte(secret),
-			ExpiresAfter: expiresAfter,
-			DefaultClaims: &gojwt.Claims{
-				Semver: semver,
-				Scope:  scope,
-				Role:   role,
-				StandardClaims: jwt.StandardClaims{
-					Audience: audience,
-					Issuer:   issuer,
-				},
-			},
-			Validator: func(c *gojwt.Claims) error {
-				if c.Semver != semver ||
-					c.Issuer != issuer ||
-					c.Audience != audience {
-					return errors.New("invalid token")
-				}
-				return nil
-			},
-		}
-		i.signer = gojwt.New(opt)
+		i.signer = NewSigner(i.Config())
 	})
 	return i.signer
 }
@@ -176,3 +143,11 @@ func (i *Infrastructure) Router() *gin.Engine {
 // Factories for repositories, use cases etc should be created here.
 // func (i *Infrastructure) UserUseCase() {
 // }
+
+func (i *Infrastructure) UserRepository() *usersvc.Repository {
+	return usersvc.NewRepository(i.Database())
+}
+
+func (i *Infrastructure) UserService() *usersvc.Service {
+	return usersvc.NewService(i.UserRepository())
+}

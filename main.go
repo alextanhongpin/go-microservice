@@ -59,9 +59,9 @@ func main() {
 
 	}
 	{
-		repo := usersvc.NewRepository(db)
-		svc := usersvc.NewService(repo)
-		ctl := usersvc.NewController(svc)
+		// repo := usersvc.NewRepository(db)
+		// svc := usersvc.NewService(repo)
+		ctl := usersvc.NewController(infra.UserService())
 		r.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
 		// r.GET("/users/:userID", basicAuthorizer.ctl.GetUsers)
 	}
