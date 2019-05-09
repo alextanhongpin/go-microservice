@@ -24,13 +24,16 @@ import (
 )
 
 type Infrastructure struct {
-	config    *Config
-	db        *sql.DB
-	router    *gin.Engine
+	config *Config
+	db     *sql.DB
+	router *gin.Engine
+	// ? Is supervisor a better naming?
 	shutdowns grace.Shutdowns
 	signer    gojwt.Signer
 	logger    *zap.Logger
 
+	// ! Some infrastructure should only be created once per struct. But
+	// this leads to a massive "once" fields.
 	onceConfig   sync.Once
 	onceDB       sync.Once
 	onceRouter   sync.Once
@@ -57,7 +60,6 @@ func (i *Infrastructure) Logger() *zap.Logger {
 		i.OnShutdown(func(ctx context.Context) {
 			log.Sync()
 		})
-
 		// We are replacing the global logger here. Since logging happens at
 		// all level, it will be a little pointless to pass down the logger
 		// through dependency injection to all levels. You may still do that if
@@ -146,6 +148,8 @@ func (i *Infrastructure) Signer() gojwt.Signer {
 	return i.signer
 }
 
+// TODO: Separate the router from the infrastructure. The router, controllers
+// etc belongs to the application.
 func (i *Infrastructure) Router() *gin.Engine {
 	i.onceRouter.Do(func() {
 
@@ -183,3 +187,7 @@ func (i *Infrastructure) Router() *gin.Engine {
 	})
 	return i.router
 }
+
+// Factories for repositories, use cases etc should be created here.
+// func (i *Infrastructure) UserUseCase() {
+// }
