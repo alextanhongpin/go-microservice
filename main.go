@@ -89,6 +89,6 @@ func main() {
 	// Coordinate server shutdown with the infrastructure dependencies.
 	infra.OnShutdown(shutdown)
 
-	// Listen to the os signal for CTLR + C.
+	// Listen to the os signal for CTRL + C.
 	<-grace.Signal()
 }
