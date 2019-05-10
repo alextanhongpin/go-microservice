@@ -1,5 +1,7 @@
 # go-microservice
 
+The application, a part of the whole [architecture](https://github.com/alextanhongpin/go-microservice-architecture)
+
 Some thoughts on designing maintainable microservice with golang.
 
 - background worker
