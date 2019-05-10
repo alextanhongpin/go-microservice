@@ -3,11 +3,12 @@ package usersvc
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/api/middleware"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 type (

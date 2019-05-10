@@ -42,15 +42,15 @@ type Infrastructure struct {
 	onceLogger   sync.Once
 }
 
+// New returns a new infrastructure container.
 func New() *Infrastructure {
-	// Our infrastructure managed all the infras
-	// shutdown.
-	var infra = &Infrastructure{
+	// Our infrastructure managed all the infras shutdown.
+	return &Infrastructure{
 		shutdowns: make(grace.Shutdowns, 0),
 	}
-	return infra
 }
 
+// Logger returns a new logger instance.
 func (i *Infrastructure) Logger() *zap.Logger {
 	i.onceLogger.Do(func() {
 		cfg := i.Config()
@@ -70,10 +70,13 @@ func (i *Infrastructure) Logger() *zap.Logger {
 	return i.logger
 }
 
+// OnShutdown adds a new shutdown method to the supervisor.
 func (i *Infrastructure) OnShutdown(fn grace.Shutdown) {
 	i.shutdowns.Append(fn)
 }
 
+// Shutdown gracefully terminates all the infrastructure within the given
+// context duration.
 func (i *Infrastructure) Shutdown() {
 	i.onceShutdown.Do(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -84,6 +87,7 @@ func (i *Infrastructure) Shutdown() {
 	})
 }
 
+// Config returns a new Config that reads from the environment variables.
 func (i *Infrastructure) Config() *Config {
 	i.onceConfig.Do(func() {
 		i.config = NewConfig()
@@ -91,6 +95,7 @@ func (i *Infrastructure) Config() *Config {
 	return i.config
 }
 
+// Database returns a new pointer to the database instance.
 func (i *Infrastructure) Database() *sql.DB {
 	i.onceDB.Do(func() {
 		cfg := i.Config()
@@ -140,14 +145,12 @@ func (i *Infrastructure) Router() *gin.Engine {
 	return r
 }
 
-// Factories for repositories, use cases etc should be created here.
-// func (i *Infrastructure) UserUseCase() {
-// }
-
+// UserRepository returns a new UserRepository.
 func (i *Infrastructure) UserRepository() *usersvc.Repository {
 	return usersvc.NewRepository(i.Database())
 }
 
+// UserService returns a new UserService.
 func (i *Infrastructure) UserService() *usersvc.Service {
 	return usersvc.NewService(i.UserRepository())
 }

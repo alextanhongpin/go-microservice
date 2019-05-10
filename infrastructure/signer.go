@@ -4,9 +4,10 @@ import (
 	"errors"
 	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
+
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/pkg/gojwt"
-	jwt "github.com/dgrijalva/jwt-go"
 )
 
 func NewSigner(cfg *Config) *gojwt.JwtSigner {
