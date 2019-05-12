@@ -1,4 +1,4 @@
-package usersvc
+package user
 
 import (
 	"database/sql/driver"

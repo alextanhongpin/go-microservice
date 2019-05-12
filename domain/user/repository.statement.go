@@ -1,4 +1,4 @@
-package usersvc
+package user
 
 import "github.com/alextanhongpin/go-microservice/pkg/gostmt"
 

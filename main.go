@@ -7,7 +7,7 @@ import (
 	"github.com/alextanhongpin/go-microservice/api/middleware"
 	"github.com/alextanhongpin/go-microservice/domain/authn"
 	"github.com/alextanhongpin/go-microservice/domain/health"
-	"github.com/alextanhongpin/go-microservice/domain/usersvc"
+	"github.com/alextanhongpin/go-microservice/domain/user"
 	"github.com/alextanhongpin/go-microservice/infrastructure"
 	"github.com/alextanhongpin/pkg/grace"
 	"github.com/alextanhongpin/pkg/ratelimiter"
@@ -59,7 +59,7 @@ func main() {
 	}
 
 	{
-		ctl := usersvc.NewController(infra.NewUserService())
+		ctl := user.NewController(infra.NewUserUseCase())
 		r.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
 		// r.GET("/users/:userID", basicAuthorizer.ctl.GetUsers)
 	}

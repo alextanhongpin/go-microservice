@@ -1,15 +1,18 @@
-package usersvc
+package user
 
 type (
-	usersGetter interface {
+	getUsersRepository interface {
 		BelongingToPage() ([]User, error)
 	}
+	getUsersUseCase interface {
+		GetUsers() ([]User, error)
+	}
 	GetUsersUseCase struct {
-		users usersGetter
+		users getUsersRepository
 	}
 )
 
-func NewGetUsersUseCase(users usersGetter) *GetUsersUseCase {
+func NewGetUsersUseCase(users getUsersRepository) *GetUsersUseCase {
 	return &GetUsersUseCase{users}
 }
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/alextanhongpin/go-microservice/api/middleware"
 	"github.com/alextanhongpin/go-microservice/domain/authn"
-	"github.com/alextanhongpin/go-microservice/domain/usersvc"
+	"github.com/alextanhongpin/go-microservice/domain/user"
 	"github.com/alextanhongpin/go-microservice/infrastructure/database"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/pkg/gojwt"
@@ -149,13 +149,13 @@ func (c *Container) Router() *gin.Engine {
 }
 
 // NewUserRepository returns a new UserRepository.
-func (c *Container) NewUserRepository() *usersvc.Repository {
-	return usersvc.NewRepository(c.Database())
+func (c *Container) NewUserRepository() *user.Repository {
+	return user.NewRepository(c.Database())
 }
 
 // NewUserService returns a new UserService.
-func (c *Container) NewUserService() *usersvc.Service {
-	return usersvc.NewService(c.NewUserRepository())
+func (c *Container) NewUserUseCase() *user.UseCase {
+	return user.NewUseCase(c.NewUserRepository())
 }
 
 func (c *Container) NewAuthnRepository() *authn.Repository {

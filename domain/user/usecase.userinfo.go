@@ -1,5 +1,6 @@
-package usersvc
+package user
 
+// ? Change to root-level /me endpoint.
 import (
 	"errors"
 
@@ -9,6 +10,9 @@ import (
 type (
 	userInfoRepository interface {
 		WithID(id string) (User, error)
+	}
+	userInfoUseCase interface {
+		UserInfo(id string) (*User, error)
 	}
 	UserInfoUseCase struct {
 		users userInfoRepository

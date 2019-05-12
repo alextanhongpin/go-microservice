@@ -1,4 +1,4 @@
-package usersvc
+package user
 
 import (
 	"net/http"
