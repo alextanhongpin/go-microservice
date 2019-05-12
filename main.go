@@ -5,7 +5,7 @@ import (
 
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/api/middleware"
-	"github.com/alextanhongpin/go-microservice/domain/authnsvc"
+	"github.com/alextanhongpin/go-microservice/domain/authn"
 	"github.com/alextanhongpin/go-microservice/domain/health"
 	"github.com/alextanhongpin/go-microservice/domain/usersvc"
 	"github.com/alextanhongpin/go-microservice/infrastructure"
@@ -14,7 +14,8 @@ import (
 )
 
 func main() {
-	infra := infrastructure.New()
+	infra := infrastructure.NewContainer()
+
 	// Gracefully terminate all dependencies, together with the server.
 	defer infra.Shutdown()
 
@@ -22,9 +23,10 @@ func main() {
 		signer = infra.Signer()
 		cfg    = infra.Config()
 		r      = infra.Router()
-		db     = infra.Database()
 	)
 
+	// Middlewares/controllers are not created by the infrastructure
+	// container because they are framework dependent.
 	bearerAuthorizer := middleware.BearerAuthorizer(signer)
 	basicAuthorizer := middleware.BasicAuthorizer(cfg.Credential)
 
@@ -38,9 +40,7 @@ func main() {
 
 	// Authentication endpoint.
 	{
-		repo := authnsvc.NewRepository(db)
-		svc := authnsvc.NewService(repo, signer)
-		ctl := authnsvc.NewController(svc)
+		ctl := authn.NewController(infra.NewAuthnUseCase())
 
 		// Endpoint throttled.
 		var (
@@ -56,12 +56,10 @@ func main() {
 		throttled := r.Group("/", middleware.RateLimiter(limiter))
 		throttled.POST("/login", ctl.PostLogin)
 		throttled.POST("/register", ctl.PostRegister)
-
 	}
+
 	{
-		// repo := usersvc.NewRepository(db)
-		// svc := usersvc.NewService(repo)
-		ctl := usersvc.NewController(infra.UserService())
+		ctl := usersvc.NewController(infra.NewUserService())
 		r.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
 		// r.GET("/users/:userID", basicAuthorizer.ctl.GetUsers)
 	}

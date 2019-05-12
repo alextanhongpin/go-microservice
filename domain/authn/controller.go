@@ -1,4 +1,4 @@
-package authnsvc
+package authn
 
 import (
 	"net/http"
@@ -12,12 +12,12 @@ import (
 
 type (
 	Controller struct {
-		service
+		usecase
 	}
 )
 
-func NewController(svc service) *Controller {
-	return &Controller{svc}
+func NewController(u usecase) *Controller {
+	return &Controller{u}
 }
 
 func (ctl *Controller) PostLogin(c *gin.Context) {
@@ -34,7 +34,7 @@ func (ctl *Controller) PostLogin(c *gin.Context) {
 		ctx = c.Request.Context()
 		log = logger.WithContext(ctx)
 	)
-	accessToken, err := ctl.service.LoginWithAccessToken(ctx, req)
+	accessToken, err := ctl.usecase.LoginWithAccessToken(ctx, req)
 	if err != nil {
 		log.Error("login user failed", zap.Error(err))
 		api.ErrorJSON(c, err)
@@ -57,7 +57,7 @@ func (ctl *Controller) PostRegister(c *gin.Context) {
 		ctx = c.Request.Context()
 		log = logger.WithContext(ctx)
 	)
-	accessToken, err := ctl.service.RegisterWithAccessToken(ctx, req)
+	accessToken, err := ctl.usecase.RegisterWithAccessToken(ctx, req)
 	if err != nil {
 		log.Error("register user failed", zap.Error(err))
 		api.ErrorJSON(c, err)

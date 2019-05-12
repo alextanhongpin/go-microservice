@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/alextanhongpin/go-microservice/api/middleware"
+	"github.com/alextanhongpin/go-microservice/domain/authn"
 	"github.com/alextanhongpin/go-microservice/domain/usersvc"
+	"github.com/alextanhongpin/go-microservice/infrastructure/database"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
 	"github.com/alextanhongpin/pkg/gojwt"
 	"github.com/alextanhongpin/pkg/grace"
@@ -21,7 +23,8 @@ import (
 	"go.uber.org/zap"
 )
 
-type Infrastructure struct {
+// Container wraps all the infrastructure components together.
+type Container struct {
 	config *Config
 	db     *sql.DB
 	// router *gin.Engine
@@ -42,22 +45,22 @@ type Infrastructure struct {
 	onceLogger   sync.Once
 }
 
-// New returns a new infrastructure container.
-func New() *Infrastructure {
+// NewContainer returns a new infrastructure container.
+func NewContainer() *Container {
 	// Our infrastructure managed all the infras shutdown.
-	return &Infrastructure{
+	return &Container{
 		shutdowns: make(grace.Shutdowns, 0),
 	}
 }
 
 // Logger returns a new logger instance.
-func (i *Infrastructure) Logger() *zap.Logger {
-	i.onceLogger.Do(func() {
-		cfg := i.Config()
+func (c *Container) Logger() *zap.Logger {
+	c.onceLogger.Do(func() {
+		cfg := c.Config()
 		log := logger.New(cfg.Env,
 			zap.String("app", cfg.Name),
 			zap.String("host", cfg.Hostname))
-		i.OnShutdown(func(ctx context.Context) {
+		c.OnShutdown(func(ctx context.Context) {
 			log.Sync()
 		})
 		// We are replacing the global logger here. Since logging happens at
@@ -65,71 +68,71 @@ func (i *Infrastructure) Logger() *zap.Logger {
 		// through dependency injection to all levels. You may still do that if
 		// that is your preferred way of working.
 		zap.ReplaceGlobals(log)
-		i.logger = log
+		c.logger = log
 	})
-	return i.logger
+	return c.logger
 }
 
 // OnShutdown adds a new shutdown method to the supervisor.
-func (i *Infrastructure) OnShutdown(fn grace.Shutdown) {
-	i.shutdowns.Append(fn)
+func (c *Container) OnShutdown(fn grace.Shutdown) {
+	c.shutdowns.Append(fn)
 }
 
 // Shutdown gracefully terminates all the infrastructure within the given
 // context duration.
-func (i *Infrastructure) Shutdown() {
-	i.onceShutdown.Do(func() {
+func (c *Container) Shutdown() {
+	c.onceShutdown.Do(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		// Close all goroutines and the http server gracefully.
-		i.shutdowns.Close(ctx)
+		c.shutdowns.Close(ctx)
 	})
 }
 
 // Config returns a new Config that reads from the environment variables.
-func (i *Infrastructure) Config() *Config {
-	i.onceConfig.Do(func() {
-		i.config = NewConfig()
+func (c *Container) Config() *Config {
+	c.onceConfig.Do(func() {
+		c.config = NewConfig()
 	})
-	return i.config
+	return c.config
 }
 
 // Database returns a new pointer to the database instance.
-func (i *Infrastructure) Database() *sql.DB {
-	i.onceDB.Do(func() {
-		cfg := i.Config()
-		db := NewProductionDatabase(Option(cfg.Database))
+func (c *Container) Database() *sql.DB {
+	c.onceDB.Do(func() {
+		cfg := c.Config()
+		db := database.NewProduction(database.Option(cfg.Database))
 
 		db.SetMaxOpenConns(10)
 		db.SetMaxIdleConns(5)
 		db.SetConnMaxLifetime(time.Hour)
 
-		i.OnShutdown(func(ctx context.Context) {
+		c.OnShutdown(func(ctx context.Context) {
 			db.Close()
 		})
-		i.db = db
+		c.db = db
 	})
-	return i.db
+	return c.db
 }
 
-func (i *Infrastructure) Signer() gojwt.Signer {
-	i.onceSigner.Do(func() {
-		i.signer = NewSigner(i.Config())
+func (c *Container) Signer() gojwt.Signer {
+	c.onceSigner.Do(func() {
+		c.signer = NewSigner(c.Config())
 	})
-	return i.signer
+	return c.signer
 }
 
 // TODO: Separate the router from the infrastructure. The router, controllers
 // etc belongs to the application. This is a factory.
-func (i *Infrastructure) Router() *gin.Engine {
+func (c *Container) Router() *gin.Engine {
 	r := gin.New()
 
 	r.Use(gin.Recovery())
 	r.Use(cors.Default())
 
 	// Custom middlewares.
-	r.Use(middleware.Logger(i.Logger(), time.RFC3339, true))
+	r.Use(middleware.Logger(c.Logger(), time.RFC3339, true))
 	r.Use(middleware.RequestIDProvider(
 		requestid.RequestID(func() (string, error) {
 			return xid.New().String(), nil
@@ -145,12 +148,20 @@ func (i *Infrastructure) Router() *gin.Engine {
 	return r
 }
 
-// UserRepository returns a new UserRepository.
-func (i *Infrastructure) UserRepository() *usersvc.Repository {
-	return usersvc.NewRepository(i.Database())
+// NewUserRepository returns a new UserRepository.
+func (c *Container) NewUserRepository() *usersvc.Repository {
+	return usersvc.NewRepository(c.Database())
 }
 
-// UserService returns a new UserService.
-func (i *Infrastructure) UserService() *usersvc.Service {
-	return usersvc.NewService(i.UserRepository())
+// NewUserService returns a new UserService.
+func (c *Container) NewUserService() *usersvc.Service {
+	return usersvc.NewService(c.NewUserRepository())
+}
+
+func (c *Container) NewAuthnRepository() *authn.Repository {
+	return authn.NewRepository(c.Database())
+}
+
+func (c *Container) NewAuthnUseCase() *authn.UseCase {
+	return authn.NewUseCase(c.NewAuthnRepository(), c.Signer())
 }

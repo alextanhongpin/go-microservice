@@ -47,7 +47,7 @@ $(MODULES):
 
 .PHONY: start test
 start: up ## runs the main application 
-	# @gin -p ${PORT} run main.go
+	@# @gin -p ${PORT} run main.go
 	@go run main.go
 
 test: ## test the application

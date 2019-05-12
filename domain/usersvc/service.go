@@ -13,7 +13,6 @@ type (
 		getUsersUseCase
 		userInfoUseCase
 	}
-
 	repository interface {
 		WithID(id string) (User, error)
 		BelongingToPage() ([]User, error)

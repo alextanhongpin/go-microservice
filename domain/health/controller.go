@@ -18,19 +18,16 @@ func NewController(c *infrastructure.Config) *Controller {
 	return &Controller{c}
 }
 
-// Controller model provides useful information on the app runtime.
-type Health struct {
-	BuildDate time.Time `json:"build_date,omitempty"`
-	GitTag    string    `json:"git_tag,omitempty"`
-	Uptime    string    `json:"uptime"`
-}
-
 // GetController returns the health status of the application.
 func (ctl *Controller) GetHealth(c *gin.Context) {
-	cfg := ctl.cfg
-	c.JSON(http.StatusOK, Health{
-		BuildDate: cfg.BuildDate,
-		GitTag:    cfg.Tag,
-		Uptime:    cfg.Uptime(),
+	type response struct {
+		BuildDate time.Time `json:"build_date,omitempty"`
+		GitTag    string    `json:"git_tag,omitempty"`
+		Uptime    string    `json:"uptime"`
+	}
+	c.JSON(http.StatusOK, response{
+		BuildDate: ctl.cfg.BuildDate,
+		GitTag:    ctl.cfg.Tag,
+		Uptime:    ctl.cfg.Uptime(),
 	})
 }

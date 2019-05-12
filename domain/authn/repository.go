@@ -1,4 +1,4 @@
-package authnsvc
+package authn
 
 import (
 	"database/sql"

@@ -1,4 +1,4 @@
-package authnsvc
+package authn
 
 // User represents the user entity.
 type User struct {

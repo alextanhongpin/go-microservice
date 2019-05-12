@@ -1,11 +1,4 @@
-// Attempted the following name for package:
-// - authenticator: this sounds more like a verb
-// - authentication: too long
-// - userlogin: is too specific, since user can also register
-// - loginUser: breaks the convention, since package name is preferable a noun.
-// - authz and authn is better.
-
-package authnsvc
+package authn
 
 import (
 	"context"
@@ -30,6 +23,9 @@ type (
 	// themselves.
 	loginRepository interface {
 		WithEmail(email string) (User, error)
+	}
+	loginUseCase interface {
+		Login(ctx context.Context, req LoginRequest) (*LoginResponse, error)
 	}
 	// LoginUseCase ...
 	LoginUseCase struct {

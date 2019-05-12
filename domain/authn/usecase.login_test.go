@@ -1,4 +1,4 @@
-package authnsvc_test
+package authn_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/alextanhongpin/go-microservice/domain/authnsvc"
+	"github.com/alextanhongpin/go-microservice/domain/authn"
 	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
 
 	"github.com/alextanhongpin/passwd"
@@ -26,7 +26,7 @@ func TestLoginRequest(t *testing.T) {
 		{"", "12345678", true},
 	}
 	for _, tt := range tests {
-		err := govalidator.Validate.Struct(authnsvc.LoginRequest{
+		err := govalidator.Validate.Struct(authn.LoginRequest{
 			Username: tt.email,
 			Password: tt.password,
 		})
@@ -48,12 +48,12 @@ func TestLogin(t *testing.T) {
 			// A registered user must have a hashed password.
 			hashedPwd, err := passwd.Hash(password)
 			So(err, ShouldBeNil)
-			user := authnsvc.User{ID: userID, HashedPassword: hashedPwd}
+			user := authn.User{ID: userID, HashedPassword: hashedPwd}
 			repo := newRepository(user, nil)
-			usecase := authnsvc.NewLoginUseCase(repo)
+			usecase := authn.NewLoginUseCase(repo)
 
 			Convey("when the User enters a valid email and password", func() {
-				req := authnsvc.LoginRequest{
+				req := authn.LoginRequest{
 					Username: email,
 					Password: password,
 				}
@@ -67,7 +67,7 @@ func TestLogin(t *testing.T) {
 				})
 			})
 			Convey("when the User enters an invalid password (len < 8)", func() {
-				req := authnsvc.LoginRequest{
+				req := authn.LoginRequest{
 					Username: email,
 					Password: "",
 				}
@@ -82,7 +82,7 @@ func TestLogin(t *testing.T) {
 				})
 			})
 			Convey("when the User enters the wrong password", func() {
-				req := authnsvc.LoginRequest{
+				req := authn.LoginRequest{
 					Username: email,
 					Password: "87654321",
 				}
@@ -99,10 +99,10 @@ func TestLogin(t *testing.T) {
 		})
 		Convey("given a unregistered User", func() {
 			var errUserDoesNotExist = errors.New("user does not exist")
-			repo := newRepository(authnsvc.User{}, errUserDoesNotExist)
-			usecase := authnsvc.NewLoginUseCase(repo)
+			repo := newRepository(authn.User{}, errUserDoesNotExist)
+			usecase := authn.NewLoginUseCase(repo)
 			Convey("when the User enters a fake username and password", func() {
-				req := authnsvc.LoginRequest{
+				req := authn.LoginRequest{
 					Username: "jane.doe@mail.com",
 					Password: "xyzabc123",
 				}
@@ -121,17 +121,17 @@ func TestLogin(t *testing.T) {
 // Helpers.
 
 type repository struct {
-	user         authnsvc.User
+	user         authn.User
 	err          error
 	invoked      bool
 	invokedCount int
 }
 
-func newRepository(user authnsvc.User, err error) *repository {
+func newRepository(user authn.User, err error) *repository {
 	return &repository{user, err, false, 0}
 }
 
-func (r *repository) WithEmail(email string) (authnsvc.User, error) {
+func (r *repository) WithEmail(email string) (authn.User, error) {
 	defer func() {
 		r.invoked = true
 		r.invokedCount++

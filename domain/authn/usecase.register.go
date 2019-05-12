@@ -1,18 +1,11 @@
-// Attempted the following name for package:
-// - authenticator: this sounds more like a verb
-// - authentication: too long
-// - userlogin: is too specific, since user can also register
-// - loginUser: breaks the convention, since package name is preferable a noun.
-// - authz and authn is better.
-
-package authnsvc
+package authn
 
 import (
 	"context"
 
 	"github.com/pkg/errors"
 
-	"github.com/alextanhongpin/go-microservice/infrastructure"
+	"github.com/alextanhongpin/go-microservice/infrastructure/database"
 	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
 	"github.com/alextanhongpin/passwd"
 )
@@ -29,6 +22,9 @@ type (
 	}
 	registerRepository interface {
 		Create(username, password string) (User, error)
+	}
+	registerUseCase interface {
+		Register(ctx context.Context, req RegisterRequest) (*RegisterResponse, error)
 	}
 	// RegisterUseCase ...
 	RegisterUseCase struct {
@@ -56,7 +52,7 @@ func (r *RegisterUseCase) Register(ctx context.Context, req RegisterRequest) (*R
 	}
 	user, err := r.users.Create(req.Username, hashedPassword)
 	if err != nil {
-		if infrastructure.IsDuplicateEntry(err) {
+		if database.IsDuplicateEntry(err) {
 			return nil, errors.New("user already exists")
 		}
 		return nil, errors.Wrap(err, "create user failed")
