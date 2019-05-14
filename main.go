@@ -5,24 +5,20 @@ import (
 
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/api/middleware"
-	"github.com/alextanhongpin/go-microservice/domain/authn"
+	"github.com/alextanhongpin/go-microservice/application"
 	"github.com/alextanhongpin/go-microservice/domain/health"
-	"github.com/alextanhongpin/go-microservice/domain/user"
-	"github.com/alextanhongpin/go-microservice/infrastructure"
 	"github.com/alextanhongpin/pkg/grace"
 	"github.com/alextanhongpin/pkg/ratelimiter"
 )
 
 func main() {
-	infra := infrastructure.NewContainer()
-
-	// Gracefully terminate all dependencies, together with the server.
-	defer infra.Shutdown()
+	app := application.NewManager()
+	defer app.Shutdown()
 
 	var (
-		signer = infra.Signer()
-		cfg    = infra.Config()
-		r      = infra.Router()
+		signer = app.Signer()
+		cfg    = app.Config()
+		r      = app.Router()
 	)
 
 	// Middlewares/controllers are not created by the infrastructure
@@ -40,8 +36,7 @@ func main() {
 
 	// Authentication endpoint.
 	{
-		ctl := authn.NewController(infra.NewAuthnUseCase())
-
+		ctl := app.NewAuthnController()
 		// Endpoint throttled.
 		var (
 			interval     = ratelimiter.Per(time.Minute, 12) // 1 req every 5 seconds.
@@ -51,7 +46,7 @@ func main() {
 			expiresAfter = 1 * time.Minute
 		)
 		shutdown := limiter.CleanupVisitor(every, expiresAfter)
-		infra.OnShutdown(shutdown)
+		app.OnShutdown(shutdown)
 
 		throttled := r.Group("/", middleware.RateLimiter(limiter))
 		throttled.POST("/login", ctl.PostLogin)
@@ -59,7 +54,7 @@ func main() {
 	}
 
 	{
-		ctl := user.NewController(infra.NewUserUseCase())
+		ctl := app.NewUserController()
 		r.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
 		// r.GET("/users/:userID", basicAuthorizer.ctl.GetUsers)
 	}
@@ -85,7 +80,7 @@ func main() {
 	shutdown := grace.New(r, cfg.Port)
 
 	// Coordinate server shutdown with the infrastructure dependencies.
-	infra.OnShutdown(shutdown)
+	app.OnShutdown(shutdown)
 
 	// Listen to the os signal for CTRL + C.
 	<-grace.Signal()
