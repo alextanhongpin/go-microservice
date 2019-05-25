@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
+	"github.com/alextanhongpin/passwd"
 )
 
 // Request/response.
@@ -27,6 +28,7 @@ type (
 type (
 	changePasswordRepository interface {
 		UpdateUserPassword(userID, password string) (bool, error)
+		UserWithID(userID string) (User, error)
 	}
 	changePasswordUseCase interface {
 		ChangePassword(ctx context.Context, req ChangePasswordRequest) (*ChangePasswordResponse, error)
@@ -52,7 +54,20 @@ func (c *ChangePasswordUseCase) ChangePassword(ctx context.Context, req ChangePa
 	if req.NewPassword != req.ConfirmPassword {
 		return nil, ErrInvalidPassword
 	}
-	ok, err := c.repo.UpdateUserPassword(req.ContextUserID, req.NewPassword)
+	// Take the old user and compare the password first.
+	user, err := c.repo.UserWithID(req.ContextUserID)
+	if err != nil {
+		return nil, err
+	}
+	if err := passwd.Verify(req.OldPassword, user.HashedPassword); err != nil {
+		return nil, err
+	}
+
+	hashedPassword, err := passwd.Hash(req.NewPassword)
+	if err != nil {
+		return nil, err
+	}
+	ok, err := c.repo.UpdateUserPassword(req.ContextUserID, hashedPassword)
 	return &ChangePasswordResponse{
 		Success: ok,
 	}, err

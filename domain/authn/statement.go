@@ -12,9 +12,16 @@ const (
 	tokenWithValue
 	updateUserPassword
 	userWithEmail
+	userWithID
 )
 
 var statements = gostmt.Raw{
+	userWithID: `
+		SELECT 	BIN_TO_UUID(id, true), 
+			hashed_password
+		FROM 	user
+		WHERE 	id = UUID_TO_BIN(?, true) 
+	`,
 	userWithEmail: `
 		SELECT 	BIN_TO_UUID(id, true), 
 			hashed_password 
@@ -29,13 +36,13 @@ var statements = gostmt.Raw{
 	updateUserPassword: `
 		UPDATE 	user
 		SET 	hashed_password = ?
-		WHERE 	id = UUID_TO_BIN(?)
+		WHERE 	id = UUID_TO_BIN(?, true)
 	`,
 	createToken: `
 		INSERT INTO token (id, token)
-		VALUES 	(UUID_TO_BIN(?), HEX(?))
+		VALUES 	(UUID_TO_BIN(?, true), UNHEX(?))
 		ON DUPLICATE KEY UPDATE 
-			token = token
+			token = UNHEX(?)
 	`,
 	deleteExpiredTokens: `
 		DELETE FROM token
@@ -46,7 +53,7 @@ var statements = gostmt.Raw{
 		WHERE token = UNHEX(?)
 	`,
 	tokenWithValue: `
-		SELECT 	id, token, created_at
+		SELECT 	BIN_TO_UUID(id, true), HEX(token), created_at
 		FROM 	token
 		WHERE 	token = UNHEX(?)
 		LIMIT 	1

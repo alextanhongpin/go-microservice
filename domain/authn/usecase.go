@@ -24,13 +24,12 @@ type (
 
 	// UseCase represents the authentication usecases.
 	UseCase struct {
-		usecase
-		service         *Service
-		login           *LoginUseCase
-		register        *RegisterUseCase
-		changePassword  *ChangePasswordUseCase
-		recoverPassword *RecoverPasswordUseCase
-		resetPassword   *ResetPasswordUseCase
+		*Service
+		*LoginUseCase
+		*RegisterUseCase
+		*ChangePasswordUseCase
+		*RecoverPasswordUseCase
+		*ResetPasswordUseCase
 	}
 )
 
@@ -40,13 +39,13 @@ func NewUseCase(repo Repository, signer gojwt.Signer, tokenTTL time.Duration) (*
 	recoverPassword, shutdown := NewRecoverPasswordUseCase(repo, tokenTTL)
 	return &UseCase{
 			// Service.
-			service: NewService(signer),
+			Service: NewService(signer),
 			// UseCase.
-			login:           NewLoginUseCase(repo),
-			register:        NewRegisterUseCase(repo),
-			changePassword:  NewChangePasswordUseCase(repo),
-			resetPassword:   NewResetPasswordUseCase(repo, tokenTTL),
-			recoverPassword: recoverPassword,
+			LoginUseCase:           NewLoginUseCase(repo),
+			RegisterUseCase:        NewRegisterUseCase(repo),
+			ChangePasswordUseCase:  NewChangePasswordUseCase(repo),
+			ResetPasswordUseCase:   NewResetPasswordUseCase(repo, tokenTTL),
+			RecoverPasswordUseCase: recoverPassword,
 		}, func() {
 			shutdown()
 		}
@@ -59,7 +58,7 @@ func (u *UseCase) LoginWithAccessToken(ctx context.Context, req LoginRequest) (s
 	if err != nil {
 		return "", errors.Wrap(err, "login failed")
 	}
-	accessToken, err := u.CreateAccessToken(res.Data.ID)
+	accessToken, err := u.Service.CreateAccessToken(res.Data.ID)
 	return accessToken, errors.Wrap(err, "login with access token failed")
 }
 
@@ -70,6 +69,6 @@ func (u *UseCase) RegisterWithAccessToken(ctx context.Context, req RegisterReque
 	if err != nil {
 		return "", errors.Wrap(err, "register failed")
 	}
-	accessToken, err := u.CreateAccessToken(res.User.ID)
+	accessToken, err := u.Service.CreateAccessToken(res.User.ID)
 	return accessToken, errors.Wrap(err, "register with access token failed")
 }

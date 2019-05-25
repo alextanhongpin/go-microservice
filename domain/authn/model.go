@@ -3,7 +3,7 @@ package authn
 import (
 	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/base64"
+	"encoding/hex"
 	"time"
 
 	"github.com/pkg/errors"
@@ -43,5 +43,5 @@ func hashToken(plaintext string) string {
 	h := sha256.New()
 	h.Write([]byte(plaintext))
 	b := h.Sum(nil)
-	return base64.URLEncoding.EncodeToString(b)
+	return hex.EncodeToString(b)
 }

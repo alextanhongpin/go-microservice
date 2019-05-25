@@ -7,6 +7,7 @@ import (
 	"time"
 
 	uuid "github.com/satori/go.uuid"
+	"go.uber.org/zap"
 
 	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
 )
@@ -70,6 +71,8 @@ func (r *RecoverPasswordUseCase) RecoverPassword(ctx context.Context, req Recove
 		token       = uuid.Must(uuid.NewV4()).String()
 		tokenHashed = hashToken(token)
 	)
+	log := zap.L()
+	log.Debug("token", zap.String("token", tokenHashed), zap.Int("size", len(tokenHashed)), zap.String("token unahsed", token))
 	success, err := r.repo.CreateToken(userID, tokenHashed)
 	return &RecoverPasswordResponse{
 		Success: success,

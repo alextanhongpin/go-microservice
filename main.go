@@ -60,12 +60,11 @@ func main() {
 		throttled := router.Group("/v1", middleware.RateLimiter(limiter))
 		throttled.POST("/login", ctl.PostLogin)
 		throttled.POST("/register", ctl.PostRegister)
-		// throttled.POST("/password/recover", ctl.PostRegister)
-		// throttled.POST("/password/reset", ctl.PostRegister)
-		// throttled.POST("/password/update", ctl.PostRegister)
+		throttled.POST("/password/recover", ctl.PostRecoverPassword)
+		throttled.POST("/password/reset", ctl.PostResetPassword)
+		throttled.PATCH("/password/change", bearerAuthorizer, ctl.UpdatePassword)
 		// HTML views will not have the version, and the names will be singular.
 		router.GET("/password/reset", ctl.GetResetPasswordView)
-
 	}
 
 	{

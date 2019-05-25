@@ -22,6 +22,7 @@ type (
 		// Getter.
 		TokenWithValue(token string) (Token, error)
 		UserWithEmail(email string) (User, error)
+		UserWithID(userID string) (User, error)
 	}
 	// RepositoryImpl implements the RepositoryImpl interface.
 	RepositoryImpl struct {
@@ -42,6 +43,16 @@ func NewRepository(db *sql.DB) *RepositoryImpl {
 func (r *RepositoryImpl) UserWithEmail(email string) (User, error) {
 	var user User
 	err := r.stmts[userWithEmail].QueryRow(email).Scan(
+		&user.ID,
+		&user.HashedPassword,
+	)
+	return user, err
+}
+
+// UserWithID returns a User given a valid id.
+func (r *RepositoryImpl) UserWithID(userID string) (User, error) {
+	var user User
+	err := r.stmts[userWithID].QueryRow(userID).Scan(
 		&user.ID,
 		&user.HashedPassword,
 	)
@@ -74,7 +85,7 @@ func (r *RepositoryImpl) UpdateUserPassword(userID, password string) (bool, erro
 }
 
 func (r *RepositoryImpl) CreateToken(userID, token string) (bool, error) {
-	res, err := r.stmts[createToken].Exec(userID, token)
+	res, err := r.stmts[createToken].Exec(userID, token, token)
 	if err != nil {
 		return false, err
 	}
