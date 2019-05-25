@@ -16,7 +16,7 @@ type (
 		CreateUser(username, password string) (User, error)
 
 		DeleteToken(token string) (bool, error)
-		DeleteTokens(ttl time.Duration) (int64, error)
+		DeleteExpiredTokens(ttl time.Duration) (int64, error)
 		UpdateUserPassword(userID, password string) (bool, error)
 
 		// Getter.
@@ -101,9 +101,9 @@ func (r *RepositoryImpl) DeleteToken(token string) (bool, error) {
 	return rows > 0, err
 }
 
-func (r *RepositoryImpl) DeleteTokens(ttl time.Duration) (int64, error) {
+func (r *RepositoryImpl) DeleteExpiredTokens(ttl time.Duration) (int64, error) {
 	minute := int(ttl.Minutes())
-	res, err := r.stmts[deleteTokens].Exec(minute)
+	res, err := r.stmts[deleteExpiredTokens].Exec(minute)
 	if err != nil {
 		return -1, err
 	}

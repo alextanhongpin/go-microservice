@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"html/template"
 	"time"
 
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/api/middleware"
 	"github.com/alextanhongpin/go-microservice/application"
+	"github.com/alextanhongpin/go-microservice/domain/authn"
 	"github.com/alextanhongpin/go-microservice/domain/health"
 	"github.com/alextanhongpin/pkg/grace"
 	"github.com/alextanhongpin/pkg/ratelimiter"
@@ -19,8 +21,11 @@ func main() {
 	var (
 		signer = app.Signer()
 		cfg    = app.Config()
-		r      = app.Router()
+		router = app.Router(func(tpl *template.Template) {
+			authn.NewView(tpl)
+		})
 	)
+	// Register all views here.
 
 	// Middlewares/controllers are not created by the infrastructure
 	// container because they are framework dependent.
@@ -30,9 +35,9 @@ func main() {
 	// Health endpoint.
 	{
 		ctl := health.NewController(cfg)
-		r.GET("/health", ctl.GetHealth)
-		r.GET("/protected", bearerAuthorizer, middleware.RoleChecker(api.RoleUser), ctl.GetHealth)
-		r.GET("/basic", basicAuthorizer, ctl.GetHealth)
+		router.GET("/health", ctl.GetHealth)
+		router.GET("/protected", bearerAuthorizer, middleware.RoleChecker(api.RoleUser), ctl.GetHealth)
+		router.GET("/basic", basicAuthorizer, ctl.GetHealth)
 	}
 
 	// Authentication endpoint.
@@ -53,20 +58,21 @@ func main() {
 		shutdown := limiter.CleanupVisitor(every, expiresAfter)
 		app.OnShutdown(shutdown)
 
-		throttled := r.Group("/", middleware.RateLimiter(limiter))
+		throttled := router.Group("/v1", middleware.RateLimiter(limiter))
 		throttled.POST("/login", ctl.PostLogin)
 		throttled.POST("/register", ctl.PostRegister)
 		// throttled.POST("/password/recover", ctl.PostRegister)
 		// throttled.POST("/password/reset", ctl.PostRegister)
 		// throttled.POST("/password/update", ctl.PostRegister)
-		// throttled.POST("")
+		// HTML views will not have the version, and the names will be singular.
+		router.GET("/password/reset", ctl.GetResetPasswordView)
 
 	}
 
 	{
 		ctl := app.NewUserController()
-		r.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
-		// r.GET("/users/:userID", basicAuthorizer.ctl.GetUsers)
+		router.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
+		// router.GET("/users/:userID", basicAuthorizerouter.ctl.GetUsers)
 	}
 
 	// Books endpoint with multiple roles.
@@ -76,7 +82,7 @@ func main() {
 		//         api.RoleAdmin: []string{"read:books", "create:books", "update:books", "delete:books"},
 		//         api.RoleOwner: []string{"read:books", "create:books", "delete:books"},
 		// }
-		// auth := r.Group("/v1/books", middleware.BearerAuthorizer(signer))
+		// auth := router.Group("/v1/books", middleware.BearerAuthorizer(signer))
 		// auth.GET("", middleware.RoleChecker(roles.Can("read:books")...), ctl.GetBooks)
 		// auth.POST("", middleware.RoleChecker(roles.Can("create:books")...), ctl.PostBooks)
 		// auth.UPDATE("", middleware.RoleChecker(roles.Can("update:books")...), ctl.UpdateBooks)
@@ -86,8 +92,9 @@ func main() {
 	}
 
 	// Starts a new server with the given port. Returns a shutdown method
-	// for the server.
-	shutdown := grace.New(r, cfg.Port)
+	// for the serverouter.
+
+	shutdown := grace.New(router, cfg.Port)
 
 	// Coordinate server shutdown with the infrastructure dependencies.
 	app.OnShutdown(shutdown)

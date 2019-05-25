@@ -7,7 +7,7 @@ const (
 	createToken
 	createUser
 	deleteToken
-	deleteTokens
+	deleteExpiredTokens
 	resetPassword
 	tokenWithValue
 	updateUserPassword
@@ -37,7 +37,7 @@ var statements = gostmt.Raw{
 		ON DUPLICATE KEY UPDATE 
 			token = token
 	`,
-	deleteTokens: `
+	deleteExpiredTokens: `
 		DELETE FROM token
 		WHERE 	created_at < DATE_SUB(NOW(), INTERVAL ? MINUTE)
 	`,

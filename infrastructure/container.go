@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"context"
 	"database/sql"
+	"html/template"
 	"net/http"
 	"sync"
 	"time"
@@ -30,6 +31,7 @@ type Container struct {
 	shutdowns grace.Shutdowns
 	signer    gojwt.Signer
 	logger    *zap.Logger
+	template  *template.Template
 
 	// ! Some infrastructure should only be created once per struct. But
 	// this leads to a massive "once" fields. This fields are commonly
@@ -123,8 +125,14 @@ func (c *Container) Signer() gojwt.Signer {
 
 // TODO: Separate the router from the infrastructure. The router, controllers
 // etc belongs to the application. This is a factory.
-func (c *Container) Router() *gin.Engine {
+func (c *Container) Router(registerTemplate func(*template.Template)) *gin.Engine {
 	r := gin.New()
+
+	if registerTemplate != nil {
+		tpl := template.New("")
+		registerTemplate(tpl)
+		r.SetHTMLTemplate(tpl)
+	}
 
 	r.Use(gin.Recovery())
 	r.Use(cors.Default())

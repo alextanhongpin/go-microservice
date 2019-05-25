@@ -28,7 +28,7 @@ type (
 	recoverPasswordRepository interface {
 		UserWithEmail(email string) (User, error)
 		CreateToken(userID, token string) (bool, error)
-		DeleteTokens(ttl time.Duration) (int64, error)
+		DeleteExpiredTokens(ttl time.Duration) (int64, error)
 	}
 )
 
@@ -95,7 +95,7 @@ func (r *RecoverPasswordUseCase) init() func() {
 			case <-done:
 				return
 			case <-t.C:
-				if count, err := r.repo.DeleteTokens(r.tokenTTL); err != nil {
+				if count, err := r.repo.DeleteExpiredTokens(r.tokenTTL); err != nil {
 					log.Println("error deleting tokens:", err)
 				} else {
 					log.Println("tokens deleted:", count)

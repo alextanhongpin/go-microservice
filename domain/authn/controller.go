@@ -71,6 +71,10 @@ func (ctl *Controller) UpdatePassword(c *gin.Context) {
 
 func (ctl *Controller) PostRecoverPassword(c *gin.Context) {
 }
+
 func (ctl *Controller) PostResetPassword(c *gin.Context) {
 
+}
+func (ctl *Controller) GetResetPasswordView(c *gin.Context) {
+	c.HTML(http.StatusOK, "reset_password", nil)
 }

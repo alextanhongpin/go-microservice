@@ -2,6 +2,7 @@ package application
 
 import (
 	"database/sql"
+	"html/template"
 
 	"github.com/alextanhongpin/go-microservice/domain/authn"
 	"github.com/alextanhongpin/go-microservice/domain/user"
@@ -17,7 +18,7 @@ type Infrastructure interface {
 	Database() *sql.DB
 	Logger() *zap.Logger
 	OnShutdown(grace.Shutdown)
-	Router() *gin.Engine
+	Router(func(*template.Template)) *gin.Engine
 	Shutdown()
 	Signer() gojwt.Signer
 }
