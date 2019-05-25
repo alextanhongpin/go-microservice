@@ -8,7 +8,6 @@ import (
 	"github.com/alextanhongpin/go-microservice/api"
 	"github.com/alextanhongpin/go-microservice/api/middleware"
 	"github.com/alextanhongpin/go-microservice/application"
-	"github.com/alextanhongpin/go-microservice/domain/authn"
 	"github.com/alextanhongpin/go-microservice/domain/health"
 	"github.com/alextanhongpin/pkg/grace"
 	"github.com/alextanhongpin/pkg/ratelimiter"
@@ -22,7 +21,7 @@ func main() {
 		signer = app.Signer()
 		cfg    = app.Config()
 		router = app.Router(func(tpl *template.Template) {
-			authn.NewView(tpl)
+			app.NewViews(tpl)
 		})
 	)
 	// Register all views here.

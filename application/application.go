@@ -54,3 +54,7 @@ func (m *Manager) NewAuthnController() (*authn.Controller, func()) {
 	usecase, shutdown := m.NewAuthnUseCase()
 	return authn.NewController(usecase), shutdown
 }
+
+func (m *Manager) NewViews(tpl *template.Template) {
+	authn.NewView(tpl)
+}
