@@ -65,3 +65,12 @@ func (ctl *Controller) PostRegister(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, response{accessToken})
 }
+
+func (ctl *Controller) UpdatePassword(c *gin.Context) {
+}
+
+func (ctl *Controller) PostRecoverPassword(c *gin.Context) {
+}
+func (ctl *Controller) PostResetPassword(c *gin.Context) {
+
+}

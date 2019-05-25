@@ -20,17 +20,20 @@ type (
 	RegisterResponse struct {
 		User User `json:"user"`
 	}
+)
+type (
 	registerRepository interface {
-		Create(username, password string) (User, error)
+		CreateUser(username, password string) (User, error)
 	}
 	registerUseCase interface {
 		Register(ctx context.Context, req RegisterRequest) (*RegisterResponse, error)
 	}
-	// RegisterUseCase ...
-	RegisterUseCase struct {
-		users registerRepository
-	}
 )
+
+// RegisterUseCase ...
+type RegisterUseCase struct {
+	users registerRepository
+}
 
 // NewRegisterUseCase returns a new use case to register user.
 func NewRegisterUseCase(users registerRepository) *RegisterUseCase {
@@ -50,12 +53,12 @@ func (r *RegisterUseCase) Register(ctx context.Context, req RegisterRequest) (*R
 	if err != nil {
 		return nil, errors.Wrap(err, "hash password failed")
 	}
-	user, err := r.users.Create(req.Username, hashedPassword)
+	user, err := r.users.CreateUser(req.Username, hashedPassword)
 	if err != nil {
 		if database.IsDuplicateEntry(err) {
 			return nil, errors.New("user already exists")
 		}
 		return nil, errors.Wrap(err, "create user failed")
 	}
-	return &RegisterResponse{user}, errors.Wrap(err, "register user failed")
+	return &RegisterResponse{user}, nil
 }

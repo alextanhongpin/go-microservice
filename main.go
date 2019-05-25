@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"github.com/alextanhongpin/go-microservice/api"
@@ -36,7 +37,11 @@ func main() {
 
 	// Authentication endpoint.
 	{
-		ctl := app.NewAuthnController()
+		ctl, stopBackgroundTask := app.NewAuthnController()
+		app.OnShutdown(func(ctx context.Context) {
+			stopBackgroundTask()
+		})
+
 		// Endpoint throttled.
 		var (
 			interval     = ratelimiter.Per(time.Minute, 12) // 1 req every 5 seconds.
@@ -51,6 +56,11 @@ func main() {
 		throttled := r.Group("/", middleware.RateLimiter(limiter))
 		throttled.POST("/login", ctl.PostLogin)
 		throttled.POST("/register", ctl.PostRegister)
+		// throttled.POST("/password/recover", ctl.PostRegister)
+		// throttled.POST("/password/reset", ctl.PostRegister)
+		// throttled.POST("/password/update", ctl.PostRegister)
+		// throttled.POST("")
+
 	}
 
 	{

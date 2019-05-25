@@ -23,6 +23,7 @@ type Config struct {
 	Hostname   string    `ignored:"true"`
 	StartAt    time.Time `ignored:"true"`
 
+	PasswordTokenTTL time.Duration `ignore:"true"`
 	// Nested Option.
 	Database
 }
@@ -65,5 +66,8 @@ func NewConfig() *Config {
 		log.Fatal(err)
 	}
 	cfg.Hostname = hostname
+
+	// Hardcoded values.
+	cfg.PasswordTokenTTL = 10 * time.Minute
 	return &cfg
 }

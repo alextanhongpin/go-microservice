@@ -2,24 +2,21 @@ package authn
 
 import (
 	"context"
+	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/alextanhongpin/pkg/gojwt"
-	"github.com/pkg/errors"
 )
 
 type (
-	repository interface {
-		// Reader.
-		WithEmail(email string) (User, error)
-
-		// Writer.
-		Create(username, password string) (User, error)
-	}
-
 	usecase interface {
 		service
 		loginUseCase
 		registerUseCase
+		changePasswordUseCase
+		recoverPasswordUseCase
+		resetPasswordUseCase
 		// Extended use cases.
 		LoginWithAccessToken(context.Context, LoginRequest) (string, error)
 		RegisterWithAccessToken(context.Context, RegisterRequest) (string, error)
@@ -28,22 +25,31 @@ type (
 	// UseCase represents the authentication usecases.
 	UseCase struct {
 		usecase
-		service  *Service
-		login    *LoginUseCase
-		register *RegisterUseCase
+		service         *Service
+		login           *LoginUseCase
+		register        *RegisterUseCase
+		changePassword  *ChangePasswordUseCase
+		recoverPassword *RecoverPasswordUseCase
+		resetPassword   *ResetPasswordUseCase
 	}
 )
 
 // NewUseCase returns the individual usecases + compound use cases (use cases
 // which includes other usecases).
-func NewUseCase(repo repository, signer gojwt.Signer) *UseCase {
+func NewUseCase(repo Repository, signer gojwt.Signer, tokenTTL time.Duration) (*UseCase, func()) {
+	recoverPassword, shutdown := NewRecoverPasswordUseCase(repo, tokenTTL)
 	return &UseCase{
-		// Service.
-		service: NewService(signer),
-		// UseCase.
-		login:    NewLoginUseCase(repo),
-		register: NewRegisterUseCase(repo),
-	}
+			// Service.
+			service: NewService(signer),
+			// UseCase.
+			login:           NewLoginUseCase(repo),
+			register:        NewRegisterUseCase(repo),
+			changePassword:  NewChangePasswordUseCase(repo),
+			resetPassword:   NewResetPasswordUseCase(repo, tokenTTL),
+			recoverPassword: recoverPassword,
+		}, func() {
+			shutdown()
+		}
 }
 
 // LoginWithAccessToken logins an existing user, and generates an access token
@@ -53,7 +59,7 @@ func (u *UseCase) LoginWithAccessToken(ctx context.Context, req LoginRequest) (s
 	if err != nil {
 		return "", errors.Wrap(err, "login failed")
 	}
-	accessToken, err := u.CreateAccessToken(res.User.ID)
+	accessToken, err := u.CreateAccessToken(res.Data.ID)
 	return accessToken, errors.Wrap(err, "login with access token failed")
 }
 

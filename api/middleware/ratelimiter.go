@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/alextanhongpin/go-microservice/api"
@@ -15,7 +16,7 @@ func RateLimiter(limiter ratelimit.Limiter) gin.HandlerFunc {
 		clientIP := c.ClientIP()
 		// For per path, consider concatenating the c.Request.URL.Path
 		// with the client IP.
-		visitor := limiter.GetVisitor(clientIP)
+		visitor := limiter.GetVisitor(fmt.Sprintf("%s/%s", c.Request.URL.Path, clientIP))
 		if !visitor.Allow() {
 			err := errors.Errorf(`client ip "%s" has too many requests`, clientIP)
 			c.Error(err)

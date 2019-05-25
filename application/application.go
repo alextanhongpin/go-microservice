@@ -44,14 +44,12 @@ func (m *Manager) NewUserController() *user.Controller {
 	return user.NewController(m.NewUserUseCase())
 }
 
-func (m *Manager) NewAuthnRepository() *authn.Repository {
-	return authn.NewRepository(m.Database())
+func (m *Manager) NewAuthnUseCase() (*authn.UseCase, func()) {
+	repo := authn.NewRepository(m.Database())
+	return authn.NewUseCase(repo, m.Signer(), m.Config().PasswordTokenTTL)
 }
 
-func (m *Manager) NewAuthnUseCase() *authn.UseCase {
-	return authn.NewUseCase(m.NewAuthnRepository(), m.Signer())
-}
-
-func (m *Manager) NewAuthnController() *authn.Controller {
-	return authn.NewController(m.NewAuthnUseCase())
+func (m *Manager) NewAuthnController() (*authn.Controller, func()) {
+	usecase, shutdown := m.NewAuthnUseCase()
+	return authn.NewController(usecase), shutdown
 }

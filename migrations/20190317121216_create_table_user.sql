@@ -44,4 +44,4 @@ CREATE TABLE IF NOT EXISTS user (
 
 -- +goose Down
 -- SQL in this section is executed when the migration is rolled back.
-DROP TABLE user;
+DROP TABLE IF EXISTS user;

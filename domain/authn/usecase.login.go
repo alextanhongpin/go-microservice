@@ -9,6 +9,7 @@ import (
 	"github.com/alextanhongpin/passwd"
 )
 
+// Request/response.
 type (
 	// LoginRequest ... (means self-explanatory)
 	LoginRequest struct {
@@ -17,40 +18,43 @@ type (
 	}
 	// LoginResponse ...
 	LoginResponse struct {
-		User User `json:"user"`
+		Data User `json:"data"`
 	}
+)
+
+type (
 	// interfaces are lowercase - clients have to implement them
 	// themselves.
 	loginRepository interface {
-		WithEmail(email string) (User, error)
+		UserWithEmail(email string) (User, error)
 	}
 	loginUseCase interface {
 		Login(ctx context.Context, req LoginRequest) (*LoginResponse, error)
 	}
-	// LoginUseCase ...
-	LoginUseCase struct {
-		users loginRepository
-	}
 )
 
+type LoginUseCase struct {
+	repo loginRepository
+}
+
 // NewLoginUseCase returns a new use case for login.
-func NewLoginUseCase(users loginRepository) *LoginUseCase {
+func NewLoginUseCase(repo loginRepository) *LoginUseCase {
 	return &LoginUseCase{
-		users: users,
+		repo: repo,
 	}
 }
 
 // Login checks if the user is authenticated.
 func (l *LoginUseCase) Login(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
 	if err := govalidator.Validate.Struct(req); err != nil {
-		return nil, errors.Wrap(err, "validate login request failed")
+		return nil, errors.Wrap(err, "invalid request")
 	}
-	user, err := l.users.WithEmail(req.Username)
+	user, err := l.repo.UserWithEmail(req.Username)
 	if err != nil {
-		return nil, errors.Wrap(err, "get user failed")
+		return nil, ErrInvalidUsernameOrPassword
 	}
 	if err := passwd.Verify(req.Password, user.HashedPassword); err != nil {
-		return nil, errors.Wrap(err, "verify password failed")
+		return nil, ErrInvalidUsernameOrPassword
 	}
-	return &LoginResponse{user}, errors.Wrap(err, "verify password failed")
+	return &LoginResponse{user}, err
 }
