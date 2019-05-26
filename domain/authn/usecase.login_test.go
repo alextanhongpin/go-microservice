@@ -63,7 +63,7 @@ func TestLogin(t *testing.T) {
 					So(res, ShouldNotBeNil)
 					So(repo.invoked, ShouldBeTrue)
 					So(repo.invokedCount, ShouldEqual, 1)
-					So(res.User.ID, ShouldEqual, userID)
+					So(res.Data.ID, ShouldEqual, userID)
 				})
 			})
 			Convey("when the User enters an invalid password (len < 8)", func() {
@@ -75,8 +75,7 @@ func TestLogin(t *testing.T) {
 				Convey("then the system should respond with a validation error", func() {
 					res, err := usecase.Login(context.Background(), req)
 					So(res, ShouldBeNil)
-					So(err.Error(), ShouldContainSubstring, "Password")
-					So(err.Error(), ShouldContainSubstring, "required")
+					So(err, ShouldEqual, authn.ErrInvalidRequest)
 					So(repo.invoked, ShouldBeFalse)
 					So(repo.invokedCount, ShouldEqual, 0)
 				})
@@ -90,7 +89,7 @@ func TestLogin(t *testing.T) {
 				Convey("then the system should respond with an error", func() {
 					res, err := usecase.Login(context.Background(), req)
 					So(res, ShouldBeNil)
-					So(err.Error(), ShouldContainSubstring, "password do not match")
+					So(err, ShouldEqual, authn.ErrInvalidUsernameOrPassword)
 					So(repo.invoked, ShouldBeTrue)
 					So(repo.invokedCount, ShouldEqual, 1)
 				})
@@ -109,7 +108,7 @@ func TestLogin(t *testing.T) {
 				Convey("then the system should respond with an error", func() {
 					res, err := usecase.Login(context.Background(), req)
 					So(res, ShouldBeNil)
-					So(err.Error(), ShouldContainSubstring, errUserDoesNotExist.Error())
+					So(err, ShouldEqual, authn.ErrInvalidUsernameOrPassword)
 					So(repo.invoked, ShouldBeTrue)
 					So(repo.invokedCount, ShouldEqual, 1)
 				})
@@ -131,7 +130,7 @@ func newRepository(user authn.User, err error) *repository {
 	return &repository{user, err, false, 0}
 }
 
-func (r *repository) WithEmail(email string) (authn.User, error) {
+func (r *repository) UserWithEmail(email string) (authn.User, error) {
 	defer func() {
 		r.invoked = true
 		r.invokedCount++

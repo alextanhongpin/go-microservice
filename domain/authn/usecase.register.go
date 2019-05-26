@@ -56,7 +56,7 @@ func (r *RegisterUseCase) Register(ctx context.Context, req RegisterRequest) (*R
 	user, err := r.users.CreateUser(req.Username, hashedPassword)
 	if err != nil {
 		if database.IsDuplicateEntry(err) {
-			return nil, errors.New("user already exists")
+			return nil, ErrUserExists
 		}
 		return nil, errors.Wrap(err, "create user failed")
 	}

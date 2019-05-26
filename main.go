@@ -20,11 +20,12 @@ func main() {
 	var (
 		signer = app.Signer()
 		cfg    = app.Config()
+		// Create a new router that accepts a function to render the
+		// html views.
 		router = app.Router(func(tpl *template.Template) {
 			app.NewViews(tpl)
 		})
 	)
-	// Register all views here.
 
 	// Middlewares/controllers are not created by the infrastructure
 	// container because they are framework dependent.
@@ -57,13 +58,15 @@ func main() {
 		shutdown := limiter.CleanupVisitor(every, expiresAfter)
 		app.OnShutdown(shutdown)
 
-		throttled := router.Group("/v1", middleware.RateLimiter(limiter))
-		throttled.POST("/login", ctl.PostLogin)
-		throttled.POST("/register", ctl.PostRegister)
-		throttled.POST("/password/recover", ctl.PostRecoverPassword)
-		throttled.POST("/password/reset", ctl.PostResetPassword)
-		throttled.PATCH("/password/change", bearerAuthorizer, ctl.UpdatePassword)
-		// HTML views will not have the version, and the names will be singular.
+		v1 := router.Group("/v1", middleware.RateLimiter(limiter))
+		v1.POST("/login", ctl.PostLogin)
+		v1.POST("/register", ctl.PostRegister)
+		v1.POST("/password/recover", ctl.PostRecoverPassword)
+		v1.POST("/password/reset", ctl.PostResetPassword)
+		v1.PATCH("/password/change", bearerAuthorizer, ctl.UpdatePassword)
+
+		// HTML views will not have the version, and the names will be
+		// singular. The controller will also have a View suffix.
 		router.GET("/password/reset", ctl.GetResetPasswordView)
 	}
 

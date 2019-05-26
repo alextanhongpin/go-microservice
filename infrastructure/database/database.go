@@ -16,19 +16,23 @@ type Option struct {
 	Name string
 }
 
-func New(opt Option) (*sql.DB, error) {
+func (o Option) ConnectionString() string {
 	cfg := mysql.Config{
-		User:      opt.User,
-		Passwd:    opt.Pass,
-		Addr:      opt.Host,
-		DBName:    opt.Name,
+		User:      o.User,
+		Passwd:    o.Pass,
+		Addr:      o.Host,
+		DBName:    o.Name,
 		ParseTime: true,
 		Params:    map[string]string{"charset": "utf8"},
 		Collation: "utf8mb4_unicode_ci",
 		// Required for mysql:8.0.0 and above.
 		AllowNativePasswords: true,
 	}
-	db, err := sql.Open("mysql", cfg.FormatDSN())
+	return cfg.FormatDSN()
+}
+
+func New(opt Option) (*sql.DB, error) {
+	db, err := sql.Open("mysql", opt.ConnectionString())
 	if err != nil {
 		return nil, err
 	}

@@ -3,8 +3,6 @@ package authn
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/alextanhongpin/go-microservice/pkg/govalidator"
 	"github.com/alextanhongpin/passwd"
 )
@@ -47,7 +45,7 @@ func NewLoginUseCase(repo loginRepository) *LoginUseCase {
 // Login checks if the user is authenticated.
 func (l *LoginUseCase) Login(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
 	if err := govalidator.Validate.Struct(req); err != nil {
-		return nil, errors.Wrap(err, "invalid request")
+		return nil, ErrInvalidRequest
 	}
 	user, err := l.repo.UserWithEmail(req.Username)
 	if err != nil {

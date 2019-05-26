@@ -12,9 +12,10 @@ import (
 // Errors.
 var (
 	ErrInvalidRequest            = errors.New("invalid request")
-	ErrInvalidPassword           = errors.New("invalid pssword")
+	ErrInvalidPassword           = errors.New("invalid password")
 	ErrInvalidUsernameOrPassword = errors.New("invalid username or password")
 	ErrTokenExpired              = errors.New("token expired")
+	ErrUserExists                = errors.New("user exists")
 )
 
 // User represents the user entity.
