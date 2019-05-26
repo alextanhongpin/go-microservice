@@ -214,3 +214,21 @@ func main() {
 ## Roles and Scopes
 
 Roles and scopes limits the API access to certain users, whether it is authenticated or not. Each API will have it's own scope (grouped by usecases), and only certain roles can access it. 
+
+
+## Thoughts
+
+I realised I've been mixing the interface layers and their implementation in the `domain` folders - they should ideally be separated. The reason being that the `domain` layer is one that can be reused even when the implementations has been switched. Thus it should purely be defining the business rules, the `why`, not `how`.
+
+Also, from Rakyll's [blog](https://rakyll.org/).
+```
+Naming patterns based on other languages’ dependency inversion conventions are anti-patterns in Go. Naming styles such the following don’t fit into the Go ecosystem.
+```
+```go
+type Banana interface {
+    //...
+}
+type BananaImpl struct {}
+```
+
+Makes we think twice about how to name interfaces. Will probably refactor the implementation again.
