@@ -4,13 +4,17 @@ import (
 	"database/sql"
 	"html/template"
 
-	"github.com/alextanhongpin/go-microservice/domain/authn"
-	"github.com/alextanhongpin/go-microservice/domain/user"
-	"github.com/alextanhongpin/go-microservice/infrastructure"
-	"github.com/alextanhongpin/pkg/gojwt"
-	"github.com/alextanhongpin/pkg/grace"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+
+	"github.com/alextanhongpin/pkg/gojwt"
+	"github.com/alextanhongpin/pkg/grace"
+
+	"github.com/alextanhongpin/go-microservice/implementation/authnimpl"
+	"github.com/alextanhongpin/go-microservice/implementation/tokenimpl"
+	"github.com/alextanhongpin/go-microservice/infrastructure"
+	"github.com/alextanhongpin/go-microservice/infrastructure/repository"
+	"github.com/alextanhongpin/go-microservice/usecase"
 )
 
 type Infrastructure interface {
@@ -31,30 +35,15 @@ func NewManager() *Manager {
 	return &Manager{infrastructure.NewContainer()}
 }
 
-// NewUserRepository returns a new UserRepository.
-func (m *Manager) NewUserRepository() *user.Repository {
-	return user.NewRepository(m.Database())
+func (m *Manager) NewAuthnUseCase() usecase.Authn {
+	users := repository.NewUser(m.Database())
+	userService := authnimpl.NewService()
+
+	tokens := repository.NewToken(m.Database())
+	tokenService := tokenimpl.NewService(m.Signer())
+	return authnimpl.New(users, userService, tokens, tokenService)
 }
 
-// NewUserService returns a new UserService.
-func (m *Manager) NewUserUseCase() *user.UseCase {
-	return user.NewUseCase(m.NewUserRepository())
-}
-
-func (m *Manager) NewUserController() *user.Controller {
-	return user.NewController(m.NewUserUseCase())
-}
-
-func (m *Manager) NewAuthnUseCase() (*authn.UseCase, func()) {
-	repo := authn.NewRepository(m.Database())
-	return authn.NewUseCase(repo, m.Signer(), m.Config().PasswordTokenTTL)
-}
-
-func (m *Manager) NewAuthnController() (*authn.Controller, func()) {
-	usecase, shutdown := m.NewAuthnUseCase()
-	return authn.NewController(usecase), shutdown
-}
-
-func (m *Manager) NewViews(tpl *template.Template) {
-	authn.NewView(tpl)
-}
+// func (m *Manager) NewViews(tpl *template.Template) {
+//         authn.NewView(tpl)
+// }

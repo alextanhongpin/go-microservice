@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alextanhongpin/go-microservice/api/middleware"
-	"github.com/alextanhongpin/go-microservice/infrastructure/database"
+	"github.com/alextanhongpin/go-microservice/pkg/database"
 	"github.com/alextanhongpin/go-microservice/pkg/logger"
+	"github.com/alextanhongpin/go-microservice/presentation/middleware"
 	"github.com/alextanhongpin/pkg/gojwt"
 	"github.com/alextanhongpin/pkg/grace"
 	"github.com/alextanhongpin/pkg/requestid"

@@ -1,14 +1,13 @@
 package main
 
 import (
-	"context"
 	"html/template"
 	"time"
 
-	"github.com/alextanhongpin/go-microservice/api"
-	"github.com/alextanhongpin/go-microservice/api/middleware"
 	"github.com/alextanhongpin/go-microservice/application"
-	"github.com/alextanhongpin/go-microservice/domain/health"
+	"github.com/alextanhongpin/go-microservice/presentation/api"
+	"github.com/alextanhongpin/go-microservice/presentation/controller"
+	"github.com/alextanhongpin/go-microservice/presentation/middleware"
 	"github.com/alextanhongpin/pkg/grace"
 	"github.com/alextanhongpin/pkg/ratelimiter"
 )
@@ -23,7 +22,7 @@ func main() {
 		// Create a new router that accepts a function to render the
 		// html views.
 		router = app.Router(func(tpl *template.Template) {
-			app.NewViews(tpl)
+			// app.NewViews(tpl)
 		})
 	)
 
@@ -34,7 +33,7 @@ func main() {
 
 	// Health endpoint.
 	{
-		ctl := health.NewController(cfg)
+		ctl := controller.NewHealth(cfg)
 		router.GET("/health", ctl.GetHealth)
 		router.GET("/protected", bearerAuthorizer, middleware.RoleChecker(api.RoleUser), ctl.GetHealth)
 		router.GET("/basic", basicAuthorizer, ctl.GetHealth)
@@ -42,10 +41,8 @@ func main() {
 
 	// Authentication endpoint.
 	{
-		ctl, stopBackgroundTask := app.NewAuthnController()
-		app.OnShutdown(func(ctx context.Context) {
-			stopBackgroundTask()
-		})
+		u := app.NewAuthnUseCase()
+		ctl := controller.NewAuthn(u)
 
 		// Endpoint throttled.
 		var (
@@ -67,13 +64,7 @@ func main() {
 
 		// HTML views will not have the version, and the names will be
 		// singular. The controller will also have a View suffix.
-		router.GET("/password/reset", ctl.GetResetPasswordView)
-	}
-
-	{
-		ctl := app.NewUserController()
-		router.POST("/userinfo", bearerAuthorizer, ctl.PostUserInfo)
-		// router.GET("/users/:userID", basicAuthorizerouter.ctl.GetUsers)
+		// router.GET("/password/reset", ctl.GetResetPasswordView)
 	}
 
 	// Books endpoint with multiple roles.

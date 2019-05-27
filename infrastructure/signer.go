@@ -6,7 +6,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 
-	"github.com/alextanhongpin/go-microservice/api"
+	"github.com/alextanhongpin/go-microservice/presentation/api"
 	"github.com/alextanhongpin/pkg/gojwt"
 )
 
