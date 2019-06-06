@@ -24,25 +24,31 @@ import (
 
 // Container wraps all the infrastructure components together.
 type Container struct {
-	config *Config
+	// This is required to coordinate shutdown?
+	// wg sync.WaitGroup
+	configOnce sync.Once
+	config     *Config
+
+	dbOnce sync.Once
 	db     *sql.DB
 	// router *gin.Engine
 	// ? Is supervisor a better naming?
-	shutdowns grace.Shutdowns
-	signer    gojwt.Signer
-	logger    *zap.Logger
-	template  *template.Template
+	shutdownOnce sync.Once
+	shutdowns    grace.Shutdowns
+
+	signerOnce sync.Once
+	signer     gojwt.Signer
+
+	loggerOnce sync.Once
+	logger     *zap.Logger
+
+	template *template.Template
 
 	// ! Some infrastructure should only be created once per struct. But
 	// this leads to a massive "once" fields. This fields are commonly
 	// called enablers, which differentiates themselves from factories,
 	// where multiple instances can be created.
-	onceConfig sync.Once
-	onceDB     sync.Once
 	// onceRouter   sync.Once
-	onceShutdown sync.Once
-	onceSigner   sync.Once
-	onceLogger   sync.Once
 }
 
 // NewContainer returns a new infrastructure container.
@@ -55,7 +61,7 @@ func NewContainer() *Container {
 
 // Logger returns a new logger instance.
 func (c *Container) Logger() *zap.Logger {
-	c.onceLogger.Do(func() {
+	c.loggerOnce.Do(func() {
 		cfg := c.Config()
 		log := logger.New(cfg.Env,
 			zap.String("app", cfg.Name),
@@ -81,7 +87,7 @@ func (c *Container) OnShutdown(fn grace.Shutdown) {
 // Shutdown gracefully terminates all the infrastructure within the given
 // context duration.
 func (c *Container) Shutdown() {
-	c.onceShutdown.Do(func() {
+	c.shutdownOnce.Do(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
@@ -92,7 +98,7 @@ func (c *Container) Shutdown() {
 
 // Config returns a new Config that reads from the environment variables.
 func (c *Container) Config() *Config {
-	c.onceConfig.Do(func() {
+	c.configOnce.Do(func() {
 		c.config = NewConfig()
 	})
 	return c.config
@@ -100,14 +106,14 @@ func (c *Container) Config() *Config {
 
 // Database returns a new pointer to the database instance.
 func (c *Container) Database() *sql.DB {
-	c.onceDB.Do(func() {
+	c.dbOnce.Do(func() {
 		cfg := c.Config()
 		db := database.NewProduction(database.Option(cfg.Database))
 
-		db.SetMaxOpenConns(10)
-		db.SetMaxIdleConns(5)
-		db.SetConnMaxLifetime(time.Hour)
-
+		db.SetMaxOpenConns(5)
+		db.SetMaxIdleConns(1)
+		// This should be forever.
+		// db.SetConnMaxLifetime(time.Hour)
 		c.OnShutdown(func(ctx context.Context) {
 			db.Close()
 		})
@@ -117,7 +123,7 @@ func (c *Container) Database() *sql.DB {
 }
 
 func (c *Container) Signer() gojwt.Signer {
-	c.onceSigner.Do(func() {
+	c.signerOnce.Do(func() {
 		c.signer = NewSigner(c.Config())
 	})
 	return c.signer

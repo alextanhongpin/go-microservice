@@ -16,6 +16,12 @@ func main() {
 	app := application.NewManager()
 	defer app.Shutdown()
 
+	// While we can close the database this way, it will still exit without
+	// graceful shutdown if we do not use wg.Wait to coordinate the
+	// shutdown.
+	// db := app.Database()
+	// defer db.Close()
+
 	var (
 		signer = app.Signer()
 		cfg    = app.Config()
