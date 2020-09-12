@@ -28,6 +28,15 @@ Some thoughts on designing maintainable microservice with golang.
 implement this
 - https://docs.microsoft.com/en-us/azure/architecture/patterns/
 
+
+Other things to note
+- has graceful shutdown
+- has documentation on how to create the layers service/controller/repository/entity
+- has scripts to start the program locally
+- has dockerfiles
+- has database (and all related stuff to database)
+- has pre commit to lint, fix and run tests
+
 ## Commit
 
 The commit messages are based on [Semantic Commit Messages](https://seesparkbox.com/foundry/semantic_commit_messages).
