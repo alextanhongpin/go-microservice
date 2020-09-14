@@ -29,8 +29,25 @@ implement this
 - https://docs.microsoft.com/en-us/azure/architecture/patterns/
 
 
-Other things to note
-- has graceful shutdown
+Reliability: 
+- circuit breaker (can be part of sidecar): prevents thundering herd when requests fails
+- throttle (can be part of sidecar): prevents DDOS
+- has graceful shutdown: server terminates all running processes safely
+
+Observability:
+- request id: has a unique id propagated towards each component
+- tracing: paths taken are covered and tested
+- logging: logs request/response
+
+Security:
+- no tokens/secrets in code
+- no secure data logged to stdout
+
+Docker:
+- has scripts to build image
+- has dockerignore to prevent large builds
+
+Documentation
 - has documentation on how to create the layers service/controller/repository/entity
 - has scripts to start the program locally
 - has dockerfiles
